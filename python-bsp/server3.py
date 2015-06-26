@@ -7,6 +7,8 @@ from time import time, strftime, gmtime
 import json
 from datetime import datetime
 
+INDEX_TXT_PATH = "index.txt"
+
 def revoke_time_utc():
     # https://docs.python.org/2/library/time.html#time.strftime
     return strftime("%y%m%d%H%M%S", gmtime()) + "Z"
@@ -59,11 +61,11 @@ class IndexList(object):
         name = export_x509name(x509.get_subject())
         line = "V\t" + str(x509.get_notAfter()) + "\t\"empty\"\t" + str(x509.get_serial_number()) + "\tunknown\t" + name + "\n"
 
-        print "Adding", line, "to index.txt"
-        with open("index.txt", "a") as idx_file:
+        print "Adding", line, "to", INDEX_TXT_PATH
+        with open(self.file_path, "a") as idx_file:
             idx_file.write(line)
         
-        index_list = IndexList("index.txt")
+        index_list = IndexList(self.file_path)
 
     def set_revoked(self, name):
         # change status of an entry to revoked
@@ -77,7 +79,7 @@ class IndexList(object):
         print name, "revoked at", entry.revocation_date
         self.entries[name] = entry
         
-        with open("index.txt", "w") as idx_file:
+        with open(self.file_path, "w") as idx_file:
             idx_file.write(self.export())
         
         return 1
@@ -89,7 +91,7 @@ class IndexList(object):
             content = content + entry.export() + "\n"
         return content
 
-index_list = IndexList("index.txt")
+index_list = IndexList(INDEX_TXT_PATH)
 print "INITIAL list:\n", index_list.export()
 
 class Echo(Protocol):
