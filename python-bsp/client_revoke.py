@@ -6,7 +6,7 @@ import json
 class EchoClient(Protocol):
     def connectionMade(self):
         typ = "revoke"
-        name = "/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=Technik/CN=Rk6jJcfB55@GKgPJtrwaY.QDn"
+        name = "/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=Technik/CN=cstuehrmann@fh-bielefeld.de"
         data = json.dumps({"METHOD": typ, "name": name});
         self.transport.writeSequence(data)
 

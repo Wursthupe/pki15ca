@@ -189,6 +189,9 @@ class Echo(Protocol):
         # insert user private key
         pkcs12.set_privatekey(pkey)
         
+        # revoke before signed/generated certificates
+        index_list.set_revoked(name)
+        
         # add certificate to the index-list
         index_list.add_entry(x509)
         
