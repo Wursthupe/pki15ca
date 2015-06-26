@@ -1,9 +1,4 @@
-V	235456456456Z	"empty"	01	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=FB Technik/CN=hlampe@fh-bielefeld.de
-R	235456456456Z	"empty"	03	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=FB Technik/CN=shantelmann@fh-bielefeld.de
-E	235456456456Z	"empty"	07	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=Technik/CN=cstuehrmann@fh-bielefeld.de
-V	235456456456Z	"empty"	02	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=Technik/CN=apoertner@fh-bielefeld.de
-V	20250616124152Z	"empty"	0	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=Technik/CN=iRVQ8ljami@lEC2Ke55w1.M0Y
-V	20250616124206Z	"empty"	0	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=Technik/CN=EXx81ibqzX@lX4dsfi5jX.NwH
-V	20250616124208Z	"empty"	0	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=Technik/CN=1OGTM31ua5@SxVeuTQs5Q.hbn
-V	20250616124256Z	"empty"	0	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=Technik/CN=0MMIAaDnik@uNmgvQqLN1.hTJ
-V	20250616124302Z	"empty"	0	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=Technik/CN=ZrTvwYo8g1@4DwV8K0uZJ.WW9
+R	20250623121111Z	150626121219Z	0	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=Technik/CN=TeGonHXRkR@6ymcBQwRsA.dhH
+V	20250623121107Z	"empty"	0	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=Technik/CN=0sjfcVwu1E@lYIjMUoUqa.jr4
+V	20250623121115Z	"empty"	0	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=Technik/CN=aAKNkI2Fh1@NHWNXUwDwM.dal
+V	20250623120954Z	"empty"	0	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=Technik/CN=tG2g7wkweG@9fIeUiddvE.buS

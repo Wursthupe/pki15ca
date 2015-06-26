@@ -28,7 +28,7 @@ class EchoClient(Protocol):
         
 
     def dataReceived(self, data):
-        print "Server said:", data
+        #print "Server said:", data
         
         f = open("test.pfx","w") #opens file with name of "test.txt"
         f.write(data)
@@ -45,8 +45,8 @@ class EchoClient(Protocol):
         for (name, value) in subComponents:
             print name + " is " + value
             
-        print subject
-        print subject.der()
+        #print subject
+        #print subject.der()
         
         self.transport.loseConnection()
 

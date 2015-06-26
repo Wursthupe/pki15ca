@@ -7,16 +7,9 @@ from time import time, strftime, gmtime
 import json
 from datetime import datetime
 
-# https://docs.python.org/2/library/time.html#time.strftime
-utctime = datetime.utcnow()
-
-#strftime("%a, %d %b %Y %H:%M:%S +0000", gmtime())
-#'Thu, 28 Jun 2001 14:17:15 +0000'
-
-print gmtime()
-# YYMMDDHHMMSSZ
-print strftime("%y%m%d%H%M%S", gmtime())
-
+def revoke_time_utc():
+    # https://docs.python.org/2/library/time.html#time.strftime
+    return strftime("%y%m%d%H%M%S", gmtime()) + "Z"
 
 class IndexEntry(object):
     def __init__(self, status, expiration_date, revocation_date, serialnr, name, location = "unknown"):
@@ -29,7 +22,6 @@ class IndexEntry(object):
 
     def export(self): 
         tmp = self.status + "\t" + self.expiration_date + "\t" + self.revocation_date + "\t" + self.serialnr + "\t" + self.location + "\t" + self.name
-        print "IndexEntry.export():\n", tmp
         return tmp
 
 class IndexList(object):
@@ -38,7 +30,8 @@ class IndexList(object):
         self.entries = {}
         # load list from index.txt
         with open(file_path, "r") as idx_file:
-            lines = idx_file.read().splitlines()
+            text = idx_file.read().strip()
+            lines = text.splitlines()
             for line in lines:
                 entry = self.create_entry(line.strip())
                 self.entries[entry.name] = entry
@@ -50,17 +43,14 @@ class IndexList(object):
         revocation_date = line_items[2]
         serialnr = line_items[3]
         location = line_items[4]
-
         name = line_items[5]
-        # needed, because a name itself can contain whitespaces
-        #for i in range(6, len(line_items)):
-        #    name = name + " " + line_items[i]
 
         entry = IndexEntry(status, expiration_date, revocation_date, serialnr, name, location)
         return entry
 
     def get_entry(self, name):
         # get entry of specific name
+        print "Getting entry with name ", name
         if name in self.entries.iterkeys():
             return self.entries[name]
         return 0
@@ -72,6 +62,8 @@ class IndexList(object):
         print "Adding", line, "to index.txt"
         with open("index.txt", "a") as idx_file:
             idx_file.write(line)
+        
+        index_list = IndexList("index.txt")
 
     def set_revoked(self, name):
         # change status of an entry to revoked
@@ -81,18 +73,24 @@ class IndexList(object):
             return 0
 
         entry.status = "R"
-        entry.revocation_date = "1231312Z"
+        entry.revocation_date = revoke_time_utc()
+        print name, "revoked at", entry.revocation_date
+        self.entries[name] = entry
+        
+        with open("index.txt", "w") as idx_file:
+            idx_file.write(self.export())
+        
+        return 1
 
     def export(self):
         # export list in standard format to file
         content = ""
         for name, entry in self.entries.iteritems():
             content = content + entry.export() + "\n"
-        print "IndexList.export():\n", content
         return content
 
 index_list = IndexList("index.txt")
-index_list.export()
+print "INITIAL list:\n", index_list.export()
 
 class Echo(Protocol):
 
@@ -107,20 +105,20 @@ class Echo(Protocol):
         options = {
             "generate": self.generateCertificate,
             "sign": self.signCertificate,
-            "ocsprqst": self.getIndexFile
+            "revoke": self.revokeCertificate
         }
         
         #TODO: catch unknown cases
         # delegate case to method
         result = options[method](data_json)
+        result = str(result)
         
         self.transport.write(result)
 
-    def getIndexFile(self, xData):
-        idx_file = open("index.txt", "r")
-        cnt = idx_file.read()
-        idx_file.close()
-        return cnt
+    def revokeCertificate(self, data):
+        print data
+        name = data["name"]
+        return index_list.set_revoked(name)
 
     def generateCertificate(self, userDataList):
         # generate a key-pair with RSA and 2048 bits
@@ -200,6 +198,9 @@ class Echo(Protocol):
         x509.gmtime_adj_notAfter(10*365*24*60*60)
 
         x509.sign(pkey, 'sha256')
+        
+        # add certificate to the index-list
+        index_list.add_entry(x509)
 
         pkcs12.set_certificate(x509)
 
@@ -224,12 +225,6 @@ def verifyCallback(connection, x509, errnum, errdepth, ok):
         print "Certs are fine", x509.get_subject()
     return True
 
-def getTimestamp():
-    return str(int(round(time() * 1000)))
-
-def addTimestamp(millis, name):
-    print millis + '_' + name
-
 if __name__ == '__main__':
     factory = Factory()
     factory.protocol = Echo
@@ -238,7 +233,7 @@ if __name__ == '__main__':
 
     myContextFactory = ssl.DefaultOpenSSLContextFactory(
         'keys/ca-key.pem', 'keys/ca-root.pem'
-        )
+    )
 
     ctx = myContextFactory.getContext()
 
@@ -248,7 +243,7 @@ if __name__ == '__main__':
     ctx.set_verify(
         SSL.VERIFY_PEER | SSL.VERIFY_FAIL_IF_NO_PEER_CERT,
         verifyCallback
-        )
+    )
 
     # Since we have self-signed certs we have to explicitly
     # tell the server to trust them.
