@@ -6,6 +6,7 @@ import os
 from time import time, strftime, gmtime
 import json
 from datetime import datetime
+import random
 
 INDEX_TXT_PATH = "index.txt"
 
@@ -27,16 +28,35 @@ class IndexEntry(object):
         return tmp
 
 class IndexList(object):
+    
+    entries = []
+    serial_numbers = {}
+    
     def __init__(self, file_path):
         self.file_path = file_path
-        self.entries = {}
+        self.load_entries()
+    
+    def perceive_serial_number(self, entry):
+        name = entry.name
+        serial_no = int(entry.serialnr, 16)
+        if name in self.serial_numbers:
+            if serial_no > self.serial_numbers[name]:
+                self.serial_numbers[name] = serial_no
+        else:
+            self.serial_numbers[name] = serial_no
+        print name, self.serial_numbers[name]
+    
+    def load_entries(self):
+        self.entries = []
+        
         # load list from index.txt
-        with open(file_path, "r") as idx_file:
+        with open(self.file_path, "r") as idx_file:
             text = idx_file.read().strip()
             lines = text.splitlines()
             for line in lines:
                 entry = self.create_entry(line.strip())
-                self.entries[entry.name] = entry
+                self.entries.append(entry)
+                self.perceive_serial_number(entry)
 
     def create_entry(self, idx_line):
         line_items = idx_line.split("\t")
@@ -50,35 +70,41 @@ class IndexList(object):
         entry = IndexEntry(status, expiration_date, revocation_date, serialnr, name, location)
         return entry
 
-    def get_entry(self, name):
-        # get entry of specific name
-        print "Getting entry with name ", name
-        if name in self.entries.iterkeys():
-            return self.entries[name]
-        return 0
+    def get_entry_indices(self, name):
+        #http://stackoverflow.com/questions/3013449/list-filtering-list-comprehension-vs-lambda-filter
+        return [idx for idx, e in enumerate(self.entries) if e.name == name]
+    
+    def next_serial_number(self, name):
+        if name in self.serial_numbers:
+            return self.serial_numbers[name] + 1
+        return 1
 
     def add_entry(self, x509):
         name = export_x509name(x509.get_subject())
-        line = "V\t" + str(x509.get_notAfter()) + "\t\"empty\"\t" + str(x509.get_serial_number()) + "\tunknown\t" + name + "\n"
+        sn_int = x509.get_serial_number()
+        sn_hex = "%X" % sn_int
+        line = "V\t" + str(x509.get_notAfter()) + "\t\"empty\"\t" + str(sn_hex) + "\tunknown\t" + name + "\n"
 
-        print "Adding", line, "to", INDEX_TXT_PATH
+        print "Adding", line, "to", self.file_path
         with open(self.file_path, "a") as idx_file:
             idx_file.write(line)
         
-        index_list = IndexList(self.file_path)
+        self.load_entries()
 
     def set_revoked(self, name):
         # change status of an entry to revoked
         # expiration date must be set here
-        entry = self.get_entry(name)
-        if entry == 0:
+        entry_indices = self.get_entry_indices(name)
+        if len(entry_indices) == 0:
             return 0
-
-        entry.status = "R"
-        entry.revocation_date = revoke_time_utc()
-        print name, "revoked at", entry.revocation_date
-        self.entries[name] = entry
         
+        for idx in entry_indices:
+            entry = self.entries[idx]
+            entry.status = "R"
+            entry.revocation_date = revoke_time_utc()
+            print name, "revoked at", entry.revocation_date
+            self.entries[idx] = entry
+            
         with open(self.file_path, "w") as idx_file:
             idx_file.write(self.export())
         
@@ -87,7 +113,7 @@ class IndexList(object):
     def export(self):
         # export list in standard format to file
         content = ""
-        for name, entry in self.entries.iteritems():
+        for entry in self.entries:
             content = content + entry.export() + "\n"
         return content
 
@@ -98,10 +124,6 @@ class Echo(Protocol):
 
     def dataReceived(self, data):
         data_json = json.loads(data)
-        #print "To JSON converted data received: " + json.dumps(data_json)
-        
-        method = data_json["METHOD"]
-        #print "method is " + method
 
         # define cases
         options = {
@@ -112,13 +134,13 @@ class Echo(Protocol):
         
         #TODO: catch unknown cases
         # delegate case to method
+        method = data_json["METHOD"]
         result = options[method](data_json)
         result = str(result)
         
         self.transport.write(result)
 
     def revokeCertificate(self, data):
-        print data
         name = data["name"]
         return index_list.set_revoked(name)
 
@@ -131,19 +153,18 @@ class Echo(Protocol):
         x509 = crypto.X509()
         
         # X509Name type
-        subject = self.setSubject(x509.get_subject(), userDataList)
-        #x509.set_subject(subject)
-        
-        # list of (name, value) tuples
-        subComponents = subject.get_components()
-        #for (name, value) in subComponents:
-        #    print name + " is " + value
+        self.setSubject(x509.get_subject(), userDataList)
         
         # cert is valid immediately
         x509.gmtime_adj_notBefore(0)
         
         # cert gets invalid after 10 years
         x509.gmtime_adj_notAfter(10*365*24*60*60)
+        
+        # retrieve next or initial serial number
+        name = export_x509name(x509.get_subject())
+        sn_int = index_list.next_serial_number(name)
+        x509.set_serial_number(sn_int)
         
         #TODO: load our CA root cert(PKCS12 type) and set subject as issuer
         # set issuer (CA) data

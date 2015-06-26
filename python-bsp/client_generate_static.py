@@ -2,16 +2,46 @@ from OpenSSL import SSL, crypto
 from twisted.internet import ssl, reactor
 from twisted.internet.protocol import ClientFactory, Protocol
 import json
+import random
 
 class EchoClient(Protocol):
     def connectionMade(self):
-        typ = "revoke"
-        name = "/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=Technik/CN=Rk6jJcfB55@GKgPJtrwaY.QDn"
-        data = json.dumps({"METHOD": typ, "name": name});
+        typ = "generate"
+        staat = "DE"
+        land = "NRW"
+        ort = "Minden"
+        org = "FH Bielefeld"
+        orgUnit = "Technik"
+        email = "cstuehrmann@fh-bielefeld.de"
+
+        data = json.dumps({"METHOD": typ, "C": staat, "ST": land, "L": ort, "O": org, "OU": orgUnit, "CN": email});
+
+        print data
+
         self.transport.writeSequence(data)
+        
 
     def dataReceived(self, data):
-        print "Server said:", data
+        #print "Server said:", data
+        
+        f = open("test.pfx","w") #opens file with name of "test.txt"
+        f.write(data)
+        f.close()
+        
+        # load certificate data and print something
+        pkcs12 = crypto.load_pkcs12(data)
+        x509 = pkcs12.get_certificate()
+        
+        subject = x509.get_subject()
+        
+        # list of (name, value) tuples
+        subComponents = subject.get_components()
+        for (name, value) in subComponents:
+            print name + " is " + value
+            
+        #print subject
+        #print subject.der()
+        
         self.transport.loseConnection()
 
 class EchoClientFactory(ClientFactory):
