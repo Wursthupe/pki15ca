@@ -1,0 +1,3 @@
+http://grahamc.com/blog/openssl-madness-how-to-create-keys-certificate-signing-requests-authorities-and-pem-files/
+https://thomas-leister.de/internet/eine-eigene-openssl-ca-erstellen-und-zertifikate-ausstellen/
+http://docs.ganeti.org/ganeti/2.9/html/design-x509-ca.html

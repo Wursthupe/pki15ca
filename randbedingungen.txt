@@ -1,0 +1,44 @@
+Lebenszyklus Cert (CA)
+---------------------
+CA-Zertifikate können ablaufen. Was passiert mit den bis dahin generierten Benutzerzertifikaten?
+
+Überlegung 1 (Automation!):
+In regelmäßigen Abständen eigenes neues Cert erzeugen, inkl. User-Zertifikate. Bedeutet: mehrere Certs bei der CA, ausgeliefert an Nutzer. Laufzeiit CA 5J., Nutzer 3J (BEISPIEL).
+
+
+
+Certs können ungültig werden (zwingend), wenn z.B. Verschlüsselung geknackt wird...
+Folgen: Usercerts müssen "revoked" werden, da unsicher.
+
+
+Ablauf Cert beantragen (Nutzer):
+----------------------------------
+    - Identifikation des Antragstellers (subject-Daten)
+        -> Erfassung der Identifikationsdaten
+    - Diskussion: Schlüsselerzeugung bei Nutzer???
+    - Erstellung des Antrags
+        -> relevante Angaben für das Zertifikat (s. X509v3)
+    - Übermittlung des Antrags zur CA
+    - Prüfung des Antrags (z.B. falsche Schlüssellänge!)
+        -> Ablehnung: Info an Antragsteller
+        -> Akzeptiert
+    - Certificate Request positiv bearbeiten
+    - Erzeugung des Certs
+        -> - Diskussion: Schlüsselerzeugung bei CA???
+    - Ablage/Export des Certs
+        -> Verzeichnisdienst (z.B. LDAP)
+        -> Versand/Weitergabe an Antragsteller
+        -> ...
+        -> optional: Empfangsbestätigung des Antragstellers
+ZERTIFIKAT IST NUN ERZEUGT
+    - Abfrage eines Certs
+        -> "Datenbanksuche"???
+        -> OCSP-Dienst??? (Open Certificate Status Protocol)
+            :: bietet mehr Vorteile out-of-the-box!
+    - SPERREN / REVOKEN
+        -> Sperre auch zurücknehmen/widerrufen???
+        -> Sperrliste / CRL (Certificate Revokation List)
+        -> alternativ: OCSP / LDAP
+	- Verschiedene Services möglich
+		-> "Altersabfrage"?
+		-> Wohnort???

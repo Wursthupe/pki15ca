@@ -1,0 +1,22 @@
+Zertifikate bis Montag!
+
+Für RA:
+- JSON-Doku für angeforderte User-Daten
+- Webservice aufsetzen mit REST-API, die mittels HTTP die Services anbietet
+-> User-Daten als JSON schicken
+-> GetCertificate als File zurückliefern
+- Zertifikat für RA mit Schlüsselpaar
+
+Für VA:
+- index.txt mittels POST rüberschicken, als File, nicht als String
+- OCSP Zertifikat mit Einträgen (siehe Dokument im VA-Ordner) (ohne PW)
+- Webserver-Zertifikat mit Schlüsselpaar (ohne PW)
+- Client-/Browser-Zertifikat mit Schlüsselpaar
+
+An alle:
+- Öffentliches CA-Zertifikat an alle ausstellen, sodass die CA als Root of Trust eingebunden werden kann
+
+Allgemein:
+- Dokumentation der Services über Markdown
+- Schnittstellendokumentation der Gruppen dann später allgemein
+

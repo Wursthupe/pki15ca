@@ -1,0 +1,70 @@
+Private Key der CA erzeugen. Optionaler Parameter -aes256 sichert den Key zusätzlich durch ein Passwort:
+$ openssl genrsa -out ca-key.pem 2048
+
+Root-Zertifikat erstellen. Dieses Zertifikat muss von den Clients importiert werden, 
+damit unsere CA als vertrauenswürdig (z.B. vom Browser) anerkannt wird:
+$ openssl req -x509 -new -nodes -extensions v3_ca -key ca-key.pem -days 1024 -out ca-root.pem -sha512
+You are about to be asked to enter information that will be incorporated
+into your certificate request.
+What you are about to enter is what is called a Distinguished Name or a DN.
+There are quite a few fields but you can leave some blank
+For some fields there will be a default value,
+If you enter '.', the field will be left blank.
+-----
+Country Name (2 letter code) [AU]:DE
+State or Province Name (full name) [Some-State]:NRW
+Locality Name (eg, city) []:Minden
+Organization Name (eg, company) [Internet Widgits Pty Ltd]:FH Bielefeld
+Organizational Unit Name (eg, section) []:MIF 
+Common Name (e.g. server FQDN or YOUR name) []:ca_root_mif
+Email Address []:pki@stuehrmann.eu
+
+Client-Key erstellen, Schlüssellänge ist hier 2048 Bits:
+Anmerkung: Muss später gelöscht werden, da private und nur für Client bestimmt!
+$ openssl genrsa -out zertifikat-key.pem 2048
+Generating RSA private key, 2048 bit long modulus
+...............................+++
+................................................................+++
+e is 65537 (0x10001)
+
+
+
+ZertifikatsANFRAGE erstellen. Common Name muss den Namen/Adresse/IP/... des Servers tragen, 
+zu dem eine sichere Verbindung hergestellt werden will (hier 'localhost'):
+$ openssl req -new -key zertifikat-key.pem -out zertifikat.csr -sha512
+You are about to be asked to enter information that will be incorporated
+into your certificate request.
+What you are about to enter is what is called a Distinguished Name or a DN.
+There are quite a few fields but you can leave some blank
+For some fields there will be a default value,
+If you enter '.', the field will be left blank.
+-----
+Country Name (2 letter code) [AU]:DE
+State or Province Name (full name) [Some-State]:NRW
+Locality Name (eg, city) []:Minden
+Organization Name (eg, company) [Internet Widgits Pty Ltd]:Client Company
+Organizational Unit Name (eg, section) []:Sofa
+Common Name (e.g. server FQDN or YOUR name) []:localhost
+Email Address []:cstuehrmann@fh-bielefeld.de
+
+Please enter the following 'extra' attributes
+to be sent with your certificate request
+A challenge password []:
+An optional company name []:
+
+Public-Key für den Client erstellen. Dabei wird ein komplettes Zertifikat erstellt und signiert:
+$ openssl x509 -req -in zertifikat.csr -CA ca-root.pem -CAkey ca-key.pem -CAcreateserial -out zertifikat-pub.pem -days 365 -sha512
+Signature ok
+subject=/C=DE/ST=NRW/L=Minden/O=Client Company/OU=Sofa/CN=localhost/emailAddress=cstuehrmann@fh-bielefeld.de
+Getting CA Private Key
+
+
+Wir haben nun folgende Dateien erstellt:
+ca-key.pem -> private Key de r CA (wir)
+ca-root.pem -> Root-Zertifikat der CA (muss beim Client bekannt gemacht werden)
+ca-root.srl -> Keine Ahnung, Inhalt: EE897589C18206C6
+zertifikat.csr -> ZertifikatsANFRAGE des Client, muss anschließend gelöscht werden
+zertifikat-key.pem -> private Key des Client
+zertifikat-pub.pem -> public Key des Client
+
+
