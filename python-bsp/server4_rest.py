@@ -8,9 +8,12 @@ import json
 from datetime import datetime
 import random
 
+
 import BaseHTTPServer
 
 INDEX_TXT_PATH = "index.txt"
+HOST_NAME = "localhost"
+PORT_NUMBER = 8080
 
 def revoke_time_utc():
     # https://docs.python.org/2/library/time.html#time.strftime
@@ -129,6 +132,8 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.data_string = self.rfile.read(int(self.headers['Content-Length']))
         # Format Header correctly
         self.send_response(200)
+        # octet-stream for binary data
+        self.send_header('Content-Type', 'application/octet-stream')
         self.end_headers()
 
         print self.path
@@ -145,6 +150,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             return
         else:
             if (method == 'generate'):
+                # TODO: Header Type must be checked if its json
                 print 'Generate Certificate on POST data.'
                 # Load JSON object from input
                 data = json.loads(self.data_string)
@@ -155,8 +161,14 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 print 'O: ', data['O']
                 print 'OU: ', data['OU']
                 print 'CN: ', data['CN']
+                # Return pkcs12 as binary data to client
+                binCert = self.generateCertificate(data)
+                self.wfile.write(binCert)
+                # VA needs to be triggered about new index.txt
             elif (method == 'sign'):
                 print 'Sign incoming CSR.'
+                #self.signCSR(self.data_string)
+                print ca_cert.get_subject()
             elif (method == 'revoke'):
                 print 'Revoke a certificate and tell VA.'
             else:
@@ -253,6 +265,17 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         pkcs12.set_certificate(x509)
 
         return pkcs12.export()
+    
+    def signCSR(self, csrData):
+        csr = crypto.load_certificate_request(crypto.FILETYPE_ASN1, self.data_string)
+        cert = crypto.X509()
+        cert.set_subject(csr.get_subject())
+        # todo absprache wegen serialNumber!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        cert.set_serial_number(1)
+        cert.gmtime_adj_notBefore(0)
+        cert.gmtime_adj_notAfter(365*24*60*60)
+        cert.set_issuer()
+        
 
 def export_x509name(x509name):
     #/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=FB Technik/CN=hlampe@fh-bielefeld.de
@@ -269,10 +292,13 @@ if __name__ == '__main__':
     server_class = BaseHTTPServer.HTTPServer
     httpd = server_class((HOST_NAME, PORT_NUMBER), MyHandler)
     # httpd.socket = ssl.wrap_socket (httpd.socket, certfile='path/to/localhost.pem', server_side=True)
-    print time.asctime(), "Server Starts - %s:%s" % (HOST_NAME, PORT_NUMBER)
+    print "Server Starts - %s:%s" % (HOST_NAME, PORT_NUMBER)
     try:
+        ca_cert = crypto.load_certificate(crypto.FILETYPE_PEM, "./keys/ca/ca-cert.pem")
+        ca_key = crypto.load_privatekey(crypto.FILETYPE_PEM, "./keys/ca/ca-key.pem")
+        print "certificates and keys of ca loaded"
         httpd.serve_forever()
     except KeyboardInterrupt:
         pass
     httpd.server_close()
-    print time.asctime(), "Server Stops - %s:%s" % (HOST_NAME, PORT_NUMBER)
+    print "Server Stops - %s:%s" % (HOST_NAME, PORT_NUMBER)
