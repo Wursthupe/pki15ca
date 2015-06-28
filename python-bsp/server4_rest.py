@@ -8,6 +8,8 @@ import json
 from datetime import datetime
 import random
 
+import BaseHTTPServer
+
 INDEX_TXT_PATH = "index.txt"
 
 def revoke_time_utc():
@@ -120,25 +122,45 @@ class IndexList(object):
 index_list = IndexList(INDEX_TXT_PATH)
 print "INITIAL list:\n", index_list.export()
 
-class Echo(Protocol):
+class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
-    def dataReceived(self, data):
-        data_json = json.loads(data)
+    def do_POST(self):
+        # Read input JSON with the correct length
+        self.data_string = self.rfile.read(int(self.headers['Content-Length']))
+        # Format Header correctly
+        self.send_response(200)
+        self.end_headers()
 
-        # define cases
-        options = {
-            "generate": self.generateCertificate,
-            "sign": self.signCertificate,
-            "revoke": self.revokeCertificate
-        }
+        print self.path
+        pathArray = self.path.split('/')
+        if len(pathArray) != 3:
+            print 'Wrong Path. Correct path would be /ca/method. Methods are: generate, sign, revoke.'
+            return
         
-        #TODO: catch unknown cases
-        # delegate case to method
-        method = data_json["METHOD"]
-        result = options[method](data_json)
-        result = str(result)
-        
-        self.transport.write(result)
+        caCheck = pathArray[1]
+        method = pathArray[2]
+
+        if (caCheck != 'ca'):
+            print 'No CA service called, CA must be first parameter (/ca/...)!'
+            return
+        else:
+            if (method == 'generate'):
+                print 'Generate Certificate on POST data.'
+                # Load JSON object from input
+                data = json.loads(self.data_string)
+                # Print received fields
+                print 'C: ', data['C']
+                print 'ST: ', data['ST']
+                print 'L: ', data['L']
+                print 'O: ', data['O']
+                print 'OU: ', data['OU']
+                print 'CN: ', data['CN']
+            elif (method == 'sign'):
+                print 'Sign incoming CSR.'
+            elif (method == 'revoke'):
+                print 'Revoke a certificate and tell VA.'
+            else:
+                print 'Unknown command.\nAllowed commands are: generate, sign, revoke.'
 
     def revokeCertificate(self, data):
         name = data["name"]
@@ -243,37 +265,14 @@ def export_x509name(x509name):
 
     return tmp
 
-def verifyCallback(connection, x509, errnum, errdepth, ok):
-    if not ok:
-        print 'invalid cert from subject:', x509.get_subject()
-        return False
-    else:
-        print "Certs are fine", x509.get_subject()
-    return True
-
 if __name__ == '__main__':
-    factory = Factory()
-    factory.protocol = Echo
-
-    os.system("echo 'Server started...'")
-
-    myContextFactory = ssl.DefaultOpenSSLContextFactory(
-        'keys/ca-key.pem', 'keys/ca-root.pem'
-    )
-
-    ctx = myContextFactory.getContext()
-
-    # SSL.VERIFY_PEER: Verifizierung des verwendeten SSL-Certs vorraussetzen (default=true)
-    # VERIFY_FAIL_IF_NO_PEER_CERT: Vorgang wird abgebrochen, wenn die Verbindung ohne Zertifikat 
-    #     verwendet wird (setzt obigen Parameer vorraus!)
-    ctx.set_verify(
-        SSL.VERIFY_PEER | SSL.VERIFY_FAIL_IF_NO_PEER_CERT,
-        verifyCallback
-    )
-
-    # Since we have self-signed certs we have to explicitly
-    # tell the server to trust them.
-    ctx.load_verify_locations("keys/ca-root.pem")
-
-    reactor.listenSSL(8000, factory, myContextFactory)
-    reactor.run()
+    server_class = BaseHTTPServer.HTTPServer
+    httpd = server_class((HOST_NAME, PORT_NUMBER), MyHandler)
+    # httpd.socket = ssl.wrap_socket (httpd.socket, certfile='path/to/localhost.pem', server_side=True)
+    print time.asctime(), "Server Starts - %s:%s" % (HOST_NAME, PORT_NUMBER)
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    httpd.server_close()
+    print time.asctime(), "Server Stops - %s:%s" % (HOST_NAME, PORT_NUMBER)
