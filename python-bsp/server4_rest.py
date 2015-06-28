@@ -8,8 +8,9 @@ import json
 from datetime import datetime
 import random
 
-
 import BaseHTTPServer
+from twisted.test.test_sob import Crypto
+
 
 INDEX_TXT_PATH = "index.txt"
 HOST_NAME = "localhost"
@@ -148,31 +149,31 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if (caCheck != 'ca'):
             print 'No CA service called, CA must be first parameter (/ca/...)!'
             return
+        
+        if (method == 'generate'):
+            # TODO: Header Type must be checked if its json
+            print 'Generate Certificate on POST data.'
+            # Load JSON object from input
+            data = json.loads(self.data_string)
+            # Print received fields
+            print 'C: ', data['C']
+            print 'ST: ', data['ST']
+            print 'L: ', data['L']
+            print 'O: ', data['O']
+            print 'OU: ', data['OU']
+            print 'CN: ', data['CN']
+            # Return pkcs12 as binary data to client
+            binCert = self.generateCertificate(data)
+            self.wfile.write(binCert)
+            # VA needs to be triggered about new index.txt
+        elif (method == 'sign'):
+            print 'Sign incoming CSR.'
+            #self.signCSR(self.data_string)
+            print ca_cert.get_subject()
+        elif (method == 'revoke'):
+            print 'Revoke a certificate and tell VA.'
         else:
-            if (method == 'generate'):
-                # TODO: Header Type must be checked if its json
-                print 'Generate Certificate on POST data.'
-                # Load JSON object from input
-                data = json.loads(self.data_string)
-                # Print received fields
-                print 'C: ', data['C']
-                print 'ST: ', data['ST']
-                print 'L: ', data['L']
-                print 'O: ', data['O']
-                print 'OU: ', data['OU']
-                print 'CN: ', data['CN']
-                # Return pkcs12 as binary data to client
-                binCert = self.generateCertificate(data)
-                self.wfile.write(binCert)
-                # VA needs to be triggered about new index.txt
-            elif (method == 'sign'):
-                print 'Sign incoming CSR.'
-                #self.signCSR(self.data_string)
-                print ca_cert.get_subject()
-            elif (method == 'revoke'):
-                print 'Revoke a certificate and tell VA.'
-            else:
-                print 'Unknown command.\nAllowed commands are: generate, sign, revoke.'
+            print 'Unknown command.\nAllowed commands are: generate, sign, revoke.'
 
     def revokeCertificate(self, data):
         name = data["name"]
@@ -274,7 +275,14 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         cert.set_serial_number(1)
         cert.gmtime_adj_notBefore(0)
         cert.gmtime_adj_notAfter(365*24*60*60)
-        cert.set_issuer()
+        #cert.set_issuer()
+        cert.set_pubkey(csr.get_pubkey())
+        cert.sign(?, 'sha256')
+        
+        index_list.add_entry(cert)
+        pkcs12 = crypto.PKCS12()
+        pkcs12.set_certificate(cert)
+        pkcs12.set_privatekey(?)
         
 
 def export_x509name(x509name):
