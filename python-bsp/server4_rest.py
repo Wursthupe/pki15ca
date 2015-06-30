@@ -11,7 +11,7 @@ import random
 import BaseHTTPServer
 from twisted.test.test_sob import Crypto
 
-INDEX_TXT_PATH = "index.txt"
+INDEX_TXT_PATH = "./_index_txt/index.txt"
 
 #TODO: in production mode set to -> vm02.srvhub.de
 HOST_NAME = "localhost"
@@ -148,29 +148,18 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if (caCheck != 'ca'):
             print 'No CA service called, CA must be first parameter (/ca/...)!'
             return
+    
+        # Load JSON object from input
+        data = json.loads(self.data_string)
+        print "Data received: ", data
         
         if (method == 'generate'):
             # TODO: Header Type must be checked if its json
             print 'Generate Certificate on POST data.'
             
-            # Load JSON object from input
-            data = json.loads(self.data_string)
-            print "Data received: ", data
-            
-            # Print received fields
-            #print 'C: ', data['C']
-            #print 'ST: ', data['ST']
-            #print 'L: ', data['L']
-            #print 'O: ', data['O']
-            #print 'OU: ', data['OU']
-            #print 'CN: ', data['CN']
-            
             # Return pkcs12 as binary data to client
             binCert = self.generateCertificate(data)
             self.wfile.write(binCert)
-            
-            # VA needs to be triggered about new index.txt
-            
             
         elif (method == 'sign'):
             print 'Sign incoming CSR.'
