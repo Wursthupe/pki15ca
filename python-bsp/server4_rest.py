@@ -11,10 +11,13 @@ import random
 import BaseHTTPServer
 from twisted.test.test_sob import Crypto
 
-
 INDEX_TXT_PATH = "index.txt"
+
+#TODO: in production mode set to -> vm02.srvhub.de
 HOST_NAME = "localhost"
-PORT_NUMBER = 8080
+
+# on production server-vm internally delegated to port 443
+PORT_NUMBER = 8444
 
 def revoke_time_utc():
     # https://docs.python.org/2/library/time.html#time.strftime
@@ -149,19 +152,26 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if (method == 'generate'):
             # TODO: Header Type must be checked if its json
             print 'Generate Certificate on POST data.'
+            
             # Load JSON object from input
             data = json.loads(self.data_string)
+            print "Data received: ", data
+            
             # Print received fields
-            print 'C: ', data['C']
-            print 'ST: ', data['ST']
-            print 'L: ', data['L']
-            print 'O: ', data['O']
-            print 'OU: ', data['OU']
-            print 'CN: ', data['CN']
+            #print 'C: ', data['C']
+            #print 'ST: ', data['ST']
+            #print 'L: ', data['L']
+            #print 'O: ', data['O']
+            #print 'OU: ', data['OU']
+            #print 'CN: ', data['CN']
+            
             # Return pkcs12 as binary data to client
             binCert = self.generateCertificate(data)
             self.wfile.write(binCert)
+            
             # VA needs to be triggered about new index.txt
+            
+            
         elif (method == 'sign'):
             print 'Sign incoming CSR.'
             #self.signCSR(self.data_string)
@@ -276,15 +286,14 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         cert.set_pubkey(csr.get_pubkey())
         
         # TODO: correct this line!
-        cert.sign(?, 'sha256')
+        #cert.sign(?, 'sha256')
         
         index_list.add_entry(cert)
         pkcs12 = crypto.PKCS12()
         pkcs12.set_certificate(cert)
         
         # TODO: correct this line!
-        pkcs12.set_privatekey(?)
-        
+        #pkcs12.set_privatekey(?)
 
 def export_x509name(x509name):
     #/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=FB Technik/CN=hlampe@fh-bielefeld.de
@@ -303,10 +312,10 @@ if __name__ == '__main__':
     # httpd.socket = ssl.wrap_socket (httpd.socket, certfile='path/to/localhost.pem', server_side=True)
     print "Server Starts - %s:%s" % (HOST_NAME, PORT_NUMBER)
     try:
-        ca_cert = crypto.load_certificate(crypto.FILETYPE_PEM, "./keys/ca/ca-cert.pem")
-        
-        ca_key = crypto.load_privatekey(crypto.FILETYPE_PEM, "./keys/ca/ca-key.pem")
-        print "certificates and keys of ca loaded"
+        #TODO: correct this line
+        #ca_cert = crypto.load_certificate(crypto.FILETYPE_PEM, "./keys/ca/ca-cert.pem")
+        #ca_key = crypto.load_privatekey(crypto.FILETYPE_PEM, "./keys/ca/ca-key.pem")
+        #print "certificates and keys of ca loaded"
         
         httpd.serve_forever()
     except KeyboardInterrupt:
