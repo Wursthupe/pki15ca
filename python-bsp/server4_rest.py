@@ -36,21 +36,17 @@ class IndexEntry(object):
 class IndexList(object):
     
     entries = []
-    serial_numbers = {}
+    highest_serial_number = 0
     
     def __init__(self, file_path):
         self.file_path = file_path
         self.load_entries()
     
     def perceive_serial_number(self, entry):
-        name = entry.name
         serial_no = int(entry.serialnr, 16)
-        if name in self.serial_numbers:
-            if serial_no > self.serial_numbers[name]:
-                self.serial_numbers[name] = serial_no
-        else:
-            self.serial_numbers[name] = serial_no
-        print name, self.serial_numbers[name]
+        if serial_no > self.highest_serial_number:
+            self.highest_serial_number = serial_no
+        print "Highest sn: ", self.highest_serial_number
     
     def load_entries(self):
         self.entries = []
@@ -80,15 +76,15 @@ class IndexList(object):
         #http://stackoverflow.com/questions/3013449/list-filtering-list-comprehension-vs-lambda-filter
         return [idx for idx, e in enumerate(self.entries) if e.name == name]
     
-    def next_serial_number(self, name):
-        if name in self.serial_numbers:
-            return self.serial_numbers[name] + 1
-        return 1
+    def next_serial_number(self):
+        self.highest_serial_number = self.highest_serial_number + 1
+        print "Next serial number: ", self.highest_serial_number
+        return self.highest_serial_number
 
     def add_entry(self, x509):
         name = export_x509name(x509.get_subject())
         sn_int = x509.get_serial_number()
-        sn_hex = "%X" % sn_int
+        sn_hex = "%02X" % sn_int
         line = "V\t" + str(x509.get_notAfter()) + "\t\"empty\"\t" + str(sn_hex) + "\tunknown\t" + name + "\n"
 
         print "Adding", line, "to", self.file_path
@@ -198,7 +194,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         
         # retrieve next or initial serial number
         name = export_x509name(x509.get_subject())
-        sn_int = index_list.next_serial_number(name)
+        sn_int = index_list.next_serial_number()
         x509.set_serial_number(sn_int)
         
         #TODO: load our CA root cert(PKCS12 type) and set subject as issuer
@@ -271,17 +267,22 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         csr = crypto.load_certificate_request(crypto.FILETYPE_ASN1, self.data_string)
         cert = crypto.X509()
         cert.set_subject(csr.get_subject())
-        # todo absprache wegen serialNumber!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        cert.set_serial_number(1)
+        
+        cert.set_serial_number(index_list.next_serial_number())
+        
         cert.gmtime_adj_notBefore(0)
         cert.gmtime_adj_notAfter(365*24*60*60)
         #cert.set_issuer()
         cert.set_pubkey(csr.get_pubkey())
+        
+        # TODO: correct this line!
         cert.sign(?, 'sha256')
         
         index_list.add_entry(cert)
         pkcs12 = crypto.PKCS12()
         pkcs12.set_certificate(cert)
+        
+        # TODO: correct this line!
         pkcs12.set_privatekey(?)
         
 
@@ -303,8 +304,10 @@ if __name__ == '__main__':
     print "Server Starts - %s:%s" % (HOST_NAME, PORT_NUMBER)
     try:
         ca_cert = crypto.load_certificate(crypto.FILETYPE_PEM, "./keys/ca/ca-cert.pem")
+        
         ca_key = crypto.load_privatekey(crypto.FILETYPE_PEM, "./keys/ca/ca-key.pem")
         print "certificates and keys of ca loaded"
+        
         httpd.serve_forever()
     except KeyboardInterrupt:
         pass

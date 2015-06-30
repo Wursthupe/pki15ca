@@ -1,9 +1,20 @@
+from OpenSSL import SSL, crypto
+from twisted.internet import ssl, reactor
+from twisted.internet.protocol import Factory, Protocol
+
+import os
+from time import strftime, gmtime
+from datetime import datetime
+import random
+
+from twisted.test.test_sob import Crypto
+
 import time
 import BaseHTTPServer
 import json
  
 HOST_NAME = 'localhost' # !!!REMEMBER TO CHANGE THIS!!!
-PORT_NUMBER = 8080 # Maybe set this to 9000.
+PORT_NUMBER = 8444 # Maybe set this to 9000.
 
 class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_HEAD(s):
@@ -51,8 +62,12 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         else:
             if (method == 'generate'):
                 print 'Generate Certificate on POST data.'
+                print self.data_string
                 # Load JSON object from input
+                
                 data = json.loads(self.data_string)
+                print data
+                
                 # Print received fields
                 print 'C: ', data['C']
                 print 'ST: ', data['ST']
