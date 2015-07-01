@@ -1,0 +1,5 @@
+Client-Zertifikate:
+	- keyUsage = digitalSignature, keyEncipherment
+	- extendedKeyUsage = clientAuth
+	- authorityInfoAccess = OCSP;URI:http://vm02.srvhub.de:3000
+	- basicConstraints = CA:FALSE

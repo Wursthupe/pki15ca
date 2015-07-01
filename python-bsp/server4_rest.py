@@ -182,6 +182,9 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         # create a new certificate of x509 structure
         x509 = crypto.X509()
         
+        # set certificate version number to v3
+        x509.set_version(2)
+        
         # X509Name type
         self.setSubject(x509.get_subject(), userDataList)
         
@@ -192,7 +195,6 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         x509.gmtime_adj_notAfter(10*365*24*60*60)
         
         # retrieve next or initial serial number
-        name = export_x509name(x509.get_subject())
         sn_int = index_list.next_serial_number()
         x509.set_serial_number(sn_int)
         
@@ -204,11 +206,37 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         # set user public key
         x509.set_pubkey(pkey)
         
+        # SET CLIENT EXTENSIONS
+        #openssl.org/docs/apps/x509v3_config.html#STANDARD_EXTENSIONS
+        #basicConstraints=CA:FALSE
+        #keyUsage = digitalSignature, keyEncipherment
+        #extendedKeyUsage = clientAuth
+        #authorityInfoAccess = OCSP;URI:http://vm02.srvhub.de:3000
+        extensions = []
+        
+        basic_constraints_ext = crypto.X509Extension("basicConstraints", False, "CA:FALSE")
+        extensions.append(basic_constraints_ext)
+        
+        key_usage_ext = crypto.X509Extension("keyUsage", False, "digitalSignature, keyEncipherment")
+        extensions.append(key_usage_ext)
+        
+        extended_key_usage_ext = crypto.X509Extension("extendedKeyUsage", False, "clientAuth")
+        extensions.append(extended_key_usage_ext)
+        
+        authority_info_access_ext = crypto.X509Extension("authorityInfoAccess", False, "OCSP;URI:http://vm02.srvhub.de:3000")
+        extensions.append(authority_info_access_ext)
+        
+        x509.add_extensions(extensions)
+        
         #TODO: which algorithm to use? (replace with sha512)
         #TODO: replace key with CA private key
         # sign the certificate
         x509.sign(pkey, 'sha256')
         #print "Certificate signed - ACTUALLY SELF-SIGNED MODE!!!"
+        
+        with open("tmp.crt", "w") as tmp_file:
+            tmp_file.write(crypto.dump_certificate(crypto.FILETYPE_PEM, x509))
+            
         
         # create a new PKCS12 object
         pkcs12 = crypto.PKCS12()
@@ -220,6 +248,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         pkcs12.set_privatekey(pkey)
         
         # revoke before signed/generated certificates
+        name = export_x509name(x509.get_subject())
         index_list.set_revoked(name)
         
         # add certificate to the index-list
