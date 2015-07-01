@@ -302,9 +302,18 @@ if __name__ == '__main__':
     print "Server Starts - %s:%s" % (HOST_NAME, PORT_NUMBER)
     try:
         #TODO: correct this line
-        #ca_cert = crypto.load_certificate(crypto.FILETYPE_PEM, "./keys/ca/ca-cert.pem")
-        #ca_key = crypto.load_privatekey(crypto.FILETYPE_PEM, "./keys/ca/ca-key.pem")
-        #print "certificates and keys of ca loaded"
+        cert_file = open("./keys/ca/ca-cert.pem")
+        key_file = open("./keys/ca/ca-key.pem")
+        ca_cert = crypto.load_certificate(crypto.FILETYPE_PEM, cert_file.read())
+        ca_key = crypto.load_privatekey(crypto.FILETYPE_PEM, key_file.read())
+        cert_file.close()
+        key_file.close()
+        print "certificates and keys of ca loaded"
+        
+        #cert_file = open("./keys/client/client-cert.crt")
+        #client_cert = crypto.load_certificate(crypto.FILETYPE_PEM, cert_file.read())
+        #cert_file.close()
+        #index_list.add_entry(client_cert)
         
         httpd.serve_forever()
     except KeyboardInterrupt:

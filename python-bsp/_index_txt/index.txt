@@ -20,3 +20,4 @@ R	20250627133844Z	150630134401Z	13	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/
 R	20250627134136Z	150630134401Z	14	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=MIF/CN=cstuehrmann@fh-bielefeld.de
 R	20250627134216Z	150630134401Z	15	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=MIF/CN=cstuehrmann@fh-bielefeld.de
 V	20250627134401Z	"empty"	16	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=MIF/CN=cstuehrmann@fh-bielefeld.de
+V	20160625100239Z	"empty"	A264C78AF2A9FBA8	unknown	/C=DE/ST=NRW/L=Bielefeld/O=SomeCompany/OU=SomeUnit/CN=TestClient
