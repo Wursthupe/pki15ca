@@ -1,6 +1,13 @@
+########################################### IMPORTS ################################################
+# Import OpenSSL and other utilities for HTTP connection, JSON exchange and time management.
+####################################################################################################
+
 from OpenSSL import SSL, crypto
-from twisted.internet import ssl, reactor
-from twisted.internet.protocol import Factory, Protocol
+
+# TWISTED INTERNET IMPORTS ARE NOT USED ANYMORE (?)
+#from twisted.internet import ssl, reactor
+#from twisted.internet.protocol import Factory, Protocol
+#from twisted.test.test_sob import Crypto
 
 import os
 from time import time, strftime, gmtime
@@ -9,8 +16,8 @@ from datetime import datetime
 import random
 
 import BaseHTTPServer
-from twisted.test.test_sob import Crypto
 
+# Path to index.txt which is used as a certificate database
 INDEX_TXT_PATH = "./_index_txt/index.txt"
 
 #TODO: in production mode set to -> vm02.srvhub.de
@@ -23,7 +30,13 @@ def revoke_time_utc():
     # https://docs.python.org/2/library/time.html#time.strftime
     return strftime("%y%m%d%H%M%S", gmtime()) + "Z"
 
+############################################## INDEX ENTRY #########################################
+# Class for each Index Entry in index.txt, each holding its data fields. 
+####################################################################################################
+
 class IndexEntry(object):
+
+    # Constructor for an index entry, location is "unknown" by default
     def __init__(self, status, expiration_date, revocation_date, serialnr, name, location = "unknown"):
         self.status = status
         self.expiration_date = expiration_date
@@ -32,15 +45,21 @@ class IndexEntry(object):
         self.location = location
         self.name = name
 
+    # Export an index entry as a string correctly formatted for index.txt
     def export(self): 
         tmp = self.status + "\t" + self.expiration_date + "\t" + self.revocation_date + "\t" + self.serialnr + "\t" + self.location + "\t" + self.name
         return tmp
+
+########################################### INDEX LIST #############################################
+# Class for an Index List holding all Index Entries and offering methods to work with them.
+####################################################################################################
 
 class IndexList(object):
     
     entries = []
     highest_serial_number = 0
     
+    # Constructor for Index List by file path in system
     def __init__(self, file_path):
         self.file_path = file_path
         self.load_entries()
@@ -51,6 +70,7 @@ class IndexList(object):
             self.highest_serial_number = serial_no
         print "Highest sn: ", self.highest_serial_number
     
+    # Load entries from file path, create an entry object and add it to the list
     def load_entries(self):
         self.entries = []
         
@@ -125,8 +145,13 @@ class IndexList(object):
 index_list = IndexList(INDEX_TXT_PATH)
 print "INITIAL list:\n", index_list.export()
 
-class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+########################################### REST HANDLER ###########################################
+# HTTP Request Handler managing all incoming REST requests for certificate operations.
+####################################################################################################
 
+class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+
+    # Manage incoming POST request (Generate Certificate, Sign CSR)
     def do_POST(self):
         # Read input JSON with the correct length
         self.data_string = self.rfile.read(int(self.headers['Content-Length']))
@@ -136,15 +161,18 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.send_header('Content-Type', 'application/octet-stream')
         self.end_headers()
 
+        # Split URL path on '/' and check length
         print self.path
         pathArray = self.path.split('/')
         if len(pathArray) != 3:
             print 'Wrong Path. Correct path would be /ca/method. Methods are: generate, sign, revoke.'
             return
         
+        # Get caCheck and method fields from URL
         caCheck = pathArray[1]
         method = pathArray[2]
 
+        # Check if a CA service has been called as first argument
         if (caCheck != 'ca'):
             print 'No CA service called, CA must be first parameter (/ca/...)!'
             return
@@ -153,6 +181,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         data = json.loads(self.data_string)
         print "Data received: ", data
         
+        # Call the correct method passed in URL
         if (method == 'generate'):
             # TODO: Header Type must be checked if its json
             print 'Generate Certificate on POST data.'
@@ -163,17 +192,70 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             
         elif (method == 'sign'):
             print 'Sign incoming CSR.'
-            #self.signCSR(self.data_string)
-            print ca_cert.get_subject()
-        elif (method == 'revoke'):
-            print 'Revoke a certificate and tell VA.'
+
+            # Return the cert from CSR as binary data to client
+            binCert = self.signCSR(self.data_string)
+            self.wfile.write(binCert)
         else:
             print 'Unknown command.\nAllowed commands are: generate, sign, revoke.'
 
+    # Manage incoming PUT request (Certificate revocation)
+    def do_PUT(self):
+        # Read input JSON with the correct length
+        self.data_string = self.rfile.read(int(self.headers['Content-Length']))
+        # Format Header correctly
+        self.send_response(200)
+        # JSON response: {serialnr / common name of certificate: value}, {status: ok / error}
+        self.send_header('Content-Type', 'application/json')
+        self.end_headers()
+
+        # Split URL path on '/' and check length
+        print self.path
+        pathArray = self.path.split('/')
+        if len(pathArray) != 4:
+            print 'Wrong Path. Correct path would be /ca/method. Methods are: generate, sign, revoke.'
+            return
+        
+        # Get caCheck and method fields from URL
+        caCheck = pathArray[1]
+        method = pathArray[2]
+        certId = pathArray[3]
+
+        # Check if a CA service has been called as first argument
+        if (caCheck != 'ca'):
+            print 'No CA service called, CA must be first parameter (/ca/...)!'
+            return
+    
+        # Load JSON object from input
+        data = json.loads(self.data_string)
+        print "Data received: ", data
+        
+        # Call the correct method passed in URL
+        if (method == 'revoke'):
+            # TODO: Header Type must be checked if its json
+            print 'Revoke certificate with ID ', certId
+            
+            # Return json response with status code of revocation to client
+            status = self.revokeCertificate(data)
+            status_response = 'SomeJSONhere'
+            self.wfile.write(status_response)
+            
+        elif (method == 'sign'):
+            print 'Sign incoming CSR.'
+
+            # Return the cert from CSR as binary data to client
+            binCert = self.signCSR(self.data_string)
+            self.wfile.write(binCert)
+        else:
+            print 'Unknown command.\nAllowed commands are: generate, sign, revoke.'
+
+    # Revoke a certificate in index list based on its name
     def revokeCertificate(self, data):
         name = data["name"]
         return index_list.set_revoked(name)
 
+    # Generate a new certificate based on user data in JSON format
+    # TODO: CA used in signing and as issuer, but no cert chain yet
     def generateCertificate(self, userDataList):
         # generate a key-pair with RSA and 2048 bits
         pkey = crypto.PKey()
@@ -198,10 +280,8 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         sn_int = index_list.next_serial_number()
         x509.set_serial_number(sn_int)
         
-        #TODO: load our CA root cert(PKCS12 type) and set subject as issuer
         # set issuer (CA) data
-        x509.set_issuer(x509.get_subject())
-        #print "Issuer set - ACTUALLY SELF-SIGNED MODE!!!"
+        x509.set_issuer(ca_cert.get_subject())
         
         # set user public key
         x509.set_pubkey(pkey)
@@ -214,30 +294,31 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         #authorityInfoAccess = OCSP;URI:http://vm02.srvhub.de:3000
         extensions = []
         
+        # Set the user certificate to a 'No CA Certificate'
         basic_constraints_ext = crypto.X509Extension("basicConstraints", False, "CA:FALSE")
         extensions.append(basic_constraints_ext)
         
+        # Set the key usage of the user certificate to 'digitalSignature and keyEncipherment'
         key_usage_ext = crypto.X509Extension("keyUsage", False, "digitalSignature, keyEncipherment")
         extensions.append(key_usage_ext)
         
+        # Set the extended key usage of the user certificate to 'clientAuthentication'
         extended_key_usage_ext = crypto.X509Extension("extendedKeyUsage", False, "clientAuth")
         extensions.append(extended_key_usage_ext)
         
+        # Set the info access path to the OCSP URL
         authority_info_access_ext = crypto.X509Extension("authorityInfoAccess", False, "OCSP;URI:http://vm02.srvhub.de:3000")
         extensions.append(authority_info_access_ext)
         
+        # Add all extensions to the new certificate
         x509.add_extensions(extensions)
         
-        #TODO: which algorithm to use? (replace with sha512)
-        #TODO: replace key with CA private key
         # sign the certificate
-        x509.sign(pkey, 'sha256')
-        #print "Certificate signed - ACTUALLY SELF-SIGNED MODE!!!"
+        x509.sign(ca_key, 'sha512')
         
         with open("tmp.crt", "w") as tmp_file:
             tmp_file.write(crypto.dump_certificate(crypto.FILETYPE_PEM, x509))
             
-        
         # create a new PKCS12 object
         pkcs12 = crypto.PKCS12()
         
@@ -257,6 +338,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         # create a dump of PKCS12 and return
         return pkcs12.export()
             
+    # Insert the data from a JSON object into a certificate
     def setSubject(self, subject, data):
         subject.C = data["C"]
         subject.ST = data["ST"]
@@ -266,7 +348,8 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         subject.CN = data["CN"]
         
         return subject
-        
+    
+    # Sign a certificate
     def signCertificate(self, certData):
         x509 = crypto.X509()
         pkcs12 = crypto.load_pkcs12(certData)
@@ -291,28 +374,33 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         return pkcs12.export()
     
+    # Sign an incoming CSR from RA and return the signed certificate in binary format
     def signCSR(self, csrData):
+        # Load the CSR from binary input
         csr = crypto.load_certificate_request(crypto.FILETYPE_ASN1, self.data_string)
+        print 'CSR loaded from subject: ', csr.get_subject()
+        
+        # Get data from CSR and insert it into new cert
         cert = crypto.X509()
         cert.set_subject(csr.get_subject())
-        
         cert.set_serial_number(index_list.next_serial_number())
-        
         cert.gmtime_adj_notBefore(0)
         cert.gmtime_adj_notAfter(365*24*60*60)
-        #cert.set_issuer()
+        cert.set_issuer(ca_cert.get_subject())
         cert.set_pubkey(csr.get_pubkey())
         
-        # TODO: correct this line!
-        #cert.sign(?, 'sha256')
+        # Sign this new cert with the CA
+        cert.sign(ca_key, 'sha512')
         
+        # Add the new cert to index.txt databse
         index_list.add_entry(cert)
-        pkcs12 = crypto.PKCS12()
-        pkcs12.set_certificate(cert)
+        #pkcs12 = crypto.PKCS12()
+        #pkcs12.set_certificate(cert)
         
         # TODO: correct this line!
         #pkcs12.set_privatekey(?)
 
+# Export data fields of a certificate as a string in X509-Format (/C=XXX/ST=XXX/...)
 def export_x509name(x509name):
     #/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=FB Technik/CN=hlampe@fh-bielefeld.de
     tmp = "/C=" + x509name.C # countryName
@@ -324,13 +412,18 @@ def export_x509name(x509name):
 
     return tmp
 
+############################################## MAIN ################################################
+# Start the server, load the CA certificate and key. Start RestHandler when a client connects.
+####################################################################################################
+
 if __name__ == '__main__':
     server_class = BaseHTTPServer.HTTPServer
-    httpd = server_class((HOST_NAME, PORT_NUMBER), MyHandler)
+    httpd = server_class((HOST_NAME, PORT_NUMBER), RestHandler)
+    #TODO: Insert the communication cert of CA here to use it for HTTPS / SSL communication
     # httpd.socket = ssl.wrap_socket (httpd.socket, certfile='path/to/localhost.pem', server_side=True)
     print "Server Starts - %s:%s" % (HOST_NAME, PORT_NUMBER)
     try:
-        #TODO: correct this line
+        #TODO: Check if paths match eventually new folder structure
         cert_file = open("./keys/ca/ca-cert.pem")
         key_file = open("./keys/ca/ca-key.pem")
         ca_cert = crypto.load_certificate(crypto.FILETYPE_PEM, cert_file.read())
@@ -345,6 +438,8 @@ if __name__ == '__main__':
         #index_list.add_entry(client_cert)
         
         httpd.serve_forever()
+
+    # Handle Key Interrupt for a clean stop of the server
     except KeyboardInterrupt:
         pass
     httpd.server_close()

@@ -31,3 +31,5 @@ R	20250628145038Z	150701145844Z	A264C78AF2A9FBAF	unknown	/C=DE/ST=NRW/L=Minden/O
 R	20250628145248Z	150701145844Z	A264C78AF2A9FBB0	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=MIF/CN=cstuehrmann3@fh-bielefeld.de
 R	20250628145744Z	150701145844Z	A264C78AF2A9FBB1	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=MIF/CN=cstuehrmann3@fh-bielefeld.de
 V	20250628145844Z	"empty"	A264C78AF2A9FBB2	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=MIF/CN=cstuehrmann3@fh-bielefeld.de
+R	20250628193916Z	150701195730Z	A264C78AF2A9FBB3	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=MIF/CN=shantelmann@fh-bielefeld.de
+V	20250628195730Z	"empty"	A264C78AF2A9FBB4	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=MIF/CN=shantelmann@fh-bielefeld.de
