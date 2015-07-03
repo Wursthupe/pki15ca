@@ -366,6 +366,9 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         # add certificate to the index-list
         index_list.add_entry(x509)
         
+        with open("pkcs12.pfx", "w") as tmp_file:
+            tmp_file.write(pkcs12.export(passphrase=passphrase, iter=2048, maciter=1))
+        
         # create a dump of PKCS12 and return
         return pkcs12.export(passphrase=passphrase, iter=2048, maciter=1)
             
