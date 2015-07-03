@@ -291,23 +291,30 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         x509.set_pubkey(pkey)
         
         # SET CLIENT EXTENSIONS
-        #openssl.org/docs/apps/x509v3_config.html#STANDARD_EXTENSIONS
-        #basicConstraints=CA:FALSE
-        #keyUsage = digitalSignature, keyEncipherment
-        #extendedKeyUsage = clientAuth
-        #authorityInfoAccess = OCSP;URI:http://vm02.srvhub.de:3000
         extensions = []
         
         # Set the user certificate to a 'No CA Certificate'
         basic_constraints_ext = crypto.X509Extension("basicConstraints", False, "CA:FALSE")
         extensions.append(basic_constraints_ext)
         
+        cert_type_ext = crypto.X509Extension("nsCertType", False, "client, email")
+        extensions.append(cert_type_ext)
+        
+        ns_comment_ext = crypto.X509Extension("nsComment", False, "OpenSSL Generated Client Certificate")
+        extensions.append(ns_comment_ext)
+        
+        subj_key_ident_ext = crypto.X509Extension("subjectKeyIdentifier", False, "hash")
+        extensions.append(subj_key_ident_ext)
+        
+        auth_key_ident_ext = crypto.X509Extension("authorityKeyIdentifier", False, "keyid, issuer")
+        extensions.append(auth_key_ident_ext)
+        
         # Set the key usage of the user certificate to 'digitalSignature and keyEncipherment'
-        key_usage_ext = crypto.X509Extension("keyUsage", False, "digitalSignature, keyEncipherment")
+        key_usage_ext = crypto.X509Extension("keyUsage", True, "nonRepudiation, digitalSignature, keyEncipherment")
         extensions.append(key_usage_ext)
         
         # Set the extended key usage of the user certificate to 'clientAuthentication'
-        extended_key_usage_ext = crypto.X509Extension("extendedKeyUsage", False, "clientAuth")
+        extended_key_usage_ext = crypto.X509Extension("extendedKeyUsage", False, "clientAuth, emailProtection")
         extensions.append(extended_key_usage_ext)
         
         # Set the info access path to the OCSP URL
@@ -354,35 +361,10 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         
         return subject
     
-    # Sign a certificate
-    def signCertificate(self, certData):
-        x509 = crypto.X509()
-        pkcs12 = crypto.load_pkcs12(certData)
-        req = pkcs12.get_certificate()
-        x509.set_subject(req.get_subject())
-        x509.set_pubkey(req.get_pubkey())
-
-        #issuer aus Datei setzen
-
-        # cert is valid immediately
-        x509.gmtime_adj_notBefore(0)
-        
-        # cert gets invalid after 10 years
-        x509.gmtime_adj_notAfter(10*365*24*60*60)
-
-        x509.sign(pkey, 'sha512')
-        
-        # add certificate to the index-list
-        index_list.add_entry(x509)
-
-        pkcs12.set_certificate(x509)
-
-        return pkcs12.export()
-    
     # Sign an incoming CSR from RA and return the signed certificate in binary format
     def signCSR(self, csrData):
         # Load the CSR from binary input
-        csr = crypto.load_certificate_request(crypto.FILETYPE_ASN1, self.data_string)
+        csr = crypto.load_certificate_request(crypto.FILETYPE_PEM, self.data_string)
         print 'CSR loaded from subject: ', csr.get_subject()
         
         # Get data from CSR and insert it into new cert
@@ -393,6 +375,39 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         cert.gmtime_adj_notAfter(365*24*60*60)
         cert.set_issuer(ca_cert.get_subject())
         cert.set_pubkey(csr.get_pubkey())
+        
+        extensions = []
+        
+        # Set the user certificate to a 'No CA Certificate'
+        basic_constraints_ext = crypto.X509Extension("basicConstraints", False, "CA:FALSE")
+        extensions.append(basic_constraints_ext)
+        
+        cert_type_ext = crypto.X509Extension("nsCertType", False, "server")
+        extensions.append(cert_type_ext)
+        
+        ns_comment_ext = crypto.X509Extension("nsComment", False, "OpenSSL Generated Server Certificate")
+        extensions.append(ns_comment_ext)
+        
+        subj_key_ident_ext = crypto.X509Extension("subjectKeyIdentifier", False, "hash")
+        extensions.append(subj_key_ident_ext)
+        
+        auth_key_ident_ext = crypto.X509Extension("authorityKeyIdentifier", False, "keyid, issuer:always")
+        extensions.append(auth_key_ident_ext)
+        
+        # Set the key usage of the user certificate to 'digitalSignature and keyEncipherment'
+        key_usage_ext = crypto.X509Extension("keyUsage", True, "digitalSignature, keyEncipherment")
+        extensions.append(key_usage_ext)
+        
+        # Set the extended key usage of the user certificate to 'clientAuthentication'
+        extended_key_usage_ext = crypto.X509Extension("extendedKeyUsage", False, "serverAuth")
+        extensions.append(extended_key_usage_ext)
+        
+        # Set the info access path to the OCSP URL
+        authority_info_access_ext = crypto.X509Extension("authorityInfoAccess", False, "OCSP;URI:http://vm02.srvhub.de:3000")
+        extensions.append(authority_info_access_ext)
+        
+        # Add all extensions to the new certificate
+        x509.add_extensions(extensions)
         
         # Sign this new cert with the CA
         cert.sign(ca_key, 'sha512')
@@ -421,6 +436,16 @@ def export_x509name(x509name):
 # Start the server, load the CA certificate and key. Start RestHandler when a client connects.
 ####################################################################################################
 
+#TODO: Check if paths match eventually new folder structure
+# Use .crt and .key files instead of .pem
+cert_file = open("./keys/intermediate.cert.pem")
+key_file = open("./keys/intermediate.key.pem")
+ca_cert = crypto.load_certificate(crypto.FILETYPE_PEM, cert_file.read())
+ca_key = crypto.load_privatekey(crypto.FILETYPE_PEM, key_file.read())
+cert_file.close()
+key_file.close()
+print "certificates and keys of ca loaded"
+        
 if __name__ == '__main__':
     server_class = BaseHTTPServer.HTTPServer
     httpd = server_class((HOST_NAME, PORT_NUMBER), RestHandler)
@@ -428,21 +453,6 @@ if __name__ == '__main__':
     # httpd.socket = ssl.wrap_socket (httpd.socket, certfile='path/to/localhost.pem', server_side=True)
     print "Server Starts - %s:%s" % (HOST_NAME, PORT_NUMBER)
     try:
-        #TODO: Check if paths match eventually new folder structure
-        # Use .crt and .key files instead of .pem
-        cert_file = open("./keys/ca/ca-cert.pem")
-        key_file = open("./keys/ca/ca-key.pem")
-        ca_cert = crypto.load_certificate(crypto.FILETYPE_PEM, cert_file.read())
-        ca_key = crypto.load_privatekey(crypto.FILETYPE_PEM, key_file.read())
-        cert_file.close()
-        key_file.close()
-        print "certificates and keys of ca loaded"
-        
-        #cert_file = open("./keys/client/client-cert.crt")
-        #client_cert = crypto.load_certificate(crypto.FILETYPE_PEM, cert_file.read())
-        #cert_file.close()
-        #index_list.add_entry(client_cert)
-        
         httpd.serve_forever()
 
     # Handle Key Interrupt for a clean stop of the server
