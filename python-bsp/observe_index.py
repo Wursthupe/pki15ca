@@ -25,7 +25,7 @@ class MyFileSystemEventHandler(FileSystemEventHandler):
         index_json = json.dumps({ "data": content })
         
         print "Sending index.txt to VA ...", index_json
-        requests.post('http://localhost:8444/ca/generate', data=index_json)
+        requests.post('http://vm02.srvhub.de:8000/postIndex', data=index_json)
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO,
