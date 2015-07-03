@@ -15,6 +15,8 @@ import json
 from datetime import datetime
 import random
 
+import base64
+
 import BaseHTTPServer
 
 # Path to index.txt which is used as a certificate database
@@ -192,7 +194,9 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             
             # Return pkcs12 as binary data to client
             binCert = self.generateCertificate(data)
-            json_data = json.dump({status:1, certdata: binCert})
+            print base64.b64encode(binCert)
+            binCert = base64.b64encode(binCert)
+            json_data = json.dumps({"status":1, "certdata": binCert})
             self.wfile.write(json_data)
             
         elif (method == 'sign'):
@@ -304,10 +308,10 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         ns_comment_ext = crypto.X509Extension("nsComment", False, "OpenSSL Generated Client Certificate")
         extensions.append(ns_comment_ext)
         
-        subj_key_ident_ext = crypto.X509Extension("subjectKeyIdentifier", False, "hash")
+        subj_key_ident_ext = crypto.X509Extension("subjectKeyIdentifier", False, "hash", subject=ca_cert)
         extensions.append(subj_key_ident_ext)
         
-        auth_key_ident_ext = crypto.X509Extension("authorityKeyIdentifier", False, "keyid, issuer")
+        auth_key_ident_ext = crypto.X509Extension("authorityKeyIdentifier", False, "keyid", issuer=ca_cert)
         extensions.append(auth_key_ident_ext)
         
         # Set the key usage of the user certificate to 'digitalSignature and keyEncipherment'
