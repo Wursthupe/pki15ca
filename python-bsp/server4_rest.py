@@ -340,7 +340,7 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         pkcs12 = crypto.PKCS12()
 
         # set ca certificate chain
-        cacert = []
+        cacerts = []
         cacerts.append(ca_cert)
         pkcs12.set_ca_certificates(cacerts)
         
