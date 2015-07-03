@@ -21,10 +21,13 @@ import BaseHTTPServer
 INDEX_TXT_PATH = "./_index_txt/index.txt"
 
 #TODO: in production mode set to -> vm02.srvhub.de
-HOST_NAME = "localhost"
+HOST_NAME = "0.0.0.0"
+#HOST_NAME = "vm02.srvhub.de"
 
 # on production server-vm internally delegated to port 443
-PORT_NUMBER = 8444
+#PORT_NUMBER = 8444
+#PORT_NUMBER = 8081
+PORT_NUMBER = 80
 
 def revoke_time_utc():
     # https://docs.python.org/2/library/time.html#time.strftime
@@ -178,8 +181,9 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             return
     
         # Load JSON object from input
+        print "Data received: ", self.data_string
         data = json.loads(self.data_string)
-        print "Data received: ", data
+        print "Data to JSON: ", data
         
         # Call the correct method passed in URL
         if (method == 'generate'):
@@ -203,6 +207,7 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_PUT(self):
         # Read input JSON with the correct length
         self.data_string = self.rfile.read(int(self.headers['Content-Length']))
+        print "Data received: ", self.data_string
         # Format Header correctly
         self.send_response(200)
         # JSON response: {"name": "value", "status": "Revoked / Not revoked"}

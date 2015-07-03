@@ -23,9 +23,10 @@ class MyFileSystemEventHandler(FileSystemEventHandler):
             content = idx_file.read().strip()
             
         index_json = json.dumps({ "data": content })
+        headers = {'content-type': 'application/json'}
         
         print "Sending index.txt to VA ...", index_json
-        requests.post('http://vm02.srvhub.de:8000/postIndex', data=index_json)
+        requests.post('http://vm02.srvhub.de:8082/postIndex', data=index_json, headers=headers)
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO,
