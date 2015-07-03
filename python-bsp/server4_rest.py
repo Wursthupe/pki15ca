@@ -192,7 +192,8 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             
             # Return pkcs12 as binary data to client
             binCert = self.generateCertificate(data)
-            self.wfile.write(binCert)
+            json_data = json.dump({status:1, certdata: binCert})
+            self.wfile.write(json_data)
             
         elif (method == 'sign'):
             print 'Sign incoming CSR.'
