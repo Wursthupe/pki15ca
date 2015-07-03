@@ -35,6 +35,12 @@ def revoke_time_utc():
     # https://docs.python.org/2/library/time.html#time.strftime
     return strftime("%y%m%d%H%M%S", gmtime()) + "Z"
 
+def get_random_word(wordLen):
+    word = ''
+    for i in range(wordLen):
+        word += random.choice('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789')
+    return word
+
 ############################################## INDEX ENTRY #########################################
 # Class for each Index Entry in index.txt, each holding its data fields. 
 ####################################################################################################
@@ -191,12 +197,13 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if (method == 'generate'):
             # TODO: Header Type must be checked if its json
             print 'Generate Certificate on POST data.'
-            
+
             # Return pkcs12 as binary data to client
-            binCert = self.generateCertificate(data)
+            passphrase = get_random_word(20)
+            binCert = self.generateCertificate(data, passphrase)
             print base64.b64encode(binCert)
             binCert = base64.b64encode(binCert)
-            json_data = json.dumps({"status":1, "certdata": binCert})
+            json_data = json.dumps({"status":1, "certdata": binCert, "passphrase":passphrase})
             self.wfile.write(json_data)
             
         elif (method == 'sign'):
@@ -265,7 +272,7 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     # Generate a new certificate based on user data in JSON format
     # TODO: CA used in signing and as issuer, but no cert chain yet (wrong CA certs used)
     # --> Use certs from Robin
-    def generateCertificate(self, userDataList):
+    def generateCertificate(self, userDataList, passphrase):
         # generate a key-pair with RSA and 2048 bits
         pkey = crypto.PKey()
         pkey.generate_key(crypto.TYPE_RSA, 2048)
@@ -330,7 +337,7 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         x509.add_extensions(extensions)
         
         # sign the certificate
-        x509.sign(ca_key, 'sha512')
+        x509.sign(ca_key, 'sha256')
         
         # TODO: temporary cert, just for test reasons (should be removed in final version)
         with open("tmp.crt", "w") as tmp_file:
@@ -349,6 +356,8 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         
         # insert user private key
         pkcs12.set_privatekey(pkey)
+
+        pkcs12.set_friendlyname("LALELU")
         
         # revoke before signed/generated certificates
         name = export_x509name(x509.get_subject())
@@ -358,7 +367,7 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         index_list.add_entry(x509)
         
         # create a dump of PKCS12 and return
-        return pkcs12.export()
+        return pkcs12.export(passphrase=passphrase, iter=2048, maciter=1)
             
     # Insert the data from a JSON object into a certificate
     def setSubject(self, subject, data):

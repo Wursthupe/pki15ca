@@ -3,11 +3,18 @@ V	20160711074730Z	"empty"	1001	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=P
 V	20160711125645Z	"empty"	1002	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=PKI42/CN=vm02.srvhub.de
 V	20160711130505Z	"empty"	1003	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=PKI42/CN=vm02.srvhub.de
 V	20160711131813Z	"empty"	1004	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=PKI42/CN=vm02.srvhub.de
-R	20250630113718Z	150703120232Z	1005	unknown	/C=DE/ST=DE/L=DE/O=DE/OU=Admin/CN=DE
-R	20250630114016Z	150703120339Z	1006	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=MIF/CN=cstuehrmann@fh-bielefeld.de
-R	20250630114157Z	150703120339Z	1007	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=MIF/CN=cstuehrmann@fh-bielefeld.de
-R	20250630114907Z	150703120339Z	1008	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=MIF/CN=cstuehrmann@fh-bielefeld.de
-R	20250630115006Z	150703120339Z	1009	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=MIF/CN=cstuehrmann@fh-bielefeld.de
-R	20250630120022Z	150703120339Z	100A	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=MIF/CN=cstuehrmann@fh-bielefeld.de
-V	20250630120232Z	"empty"	100B	unknown	/C=DE/ST=DE/L=DE/O=DE/OU=Admin/CN=DE
-V	20250630120339Z	"empty"	100C	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=MIF/CN=cstuehrmann@fh-bielefeld.de
+R	20250630113718Z	150703122436Z	1005	unknown	/C=DE/ST=DE/L=DE/O=DE/OU=Admin/CN=DE
+R	20250630114016Z	150703122608Z	1006	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=MIF/CN=cstuehrmann@fh-bielefeld.de
+R	20250630114157Z	150703122608Z	1007	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=MIF/CN=cstuehrmann@fh-bielefeld.de
+R	20250630114907Z	150703122608Z	1008	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=MIF/CN=cstuehrmann@fh-bielefeld.de
+R	20250630115006Z	150703122608Z	1009	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=MIF/CN=cstuehrmann@fh-bielefeld.de
+R	20250630120022Z	150703122608Z	100A	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=MIF/CN=cstuehrmann@fh-bielefeld.de
+R	20250630120232Z	150703122436Z	100B	unknown	/C=DE/ST=DE/L=DE/O=DE/OU=Admin/CN=DE
+R	20250630120339Z	150703122608Z	100C	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=MIF/CN=cstuehrmann@fh-bielefeld.de
+R	20250630121253Z	150703122436Z	100D	unknown	/C=DE/ST=DE/L=DE/O=DE/OU=Admin/CN=DE
+R	20250630121358Z	150703122436Z	100E	unknown	/C=DE/ST=DE/L=DE/O=DE/OU=Admin/CN=DE
+V	20250630122436Z	"empty"	100F	unknown	/C=DE/ST=DE/L=DE/O=DE/OU=Admin/CN=DE
+V	20250630122608Z	"empty"	1010	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=MIF/CN=cstuehrmann@fh-bielefeld.de
+V	20250630123649Z	"empty"	1011	unknown	/C=DE/ST=NRW/L=Minden/O=PKI42/OU=Admin/CN=12345678
+V	20250630124539Z	"empty"	1012	unknown	/C=DE/ST=NRW/L=Minden/O=PKI42/OU=Admin/CN=Robin Rasch
+V	20250630125241Z	"empty"	1013	unknown	/C=DE/ST=NRW/L=Minden/O=PKI42/OU=Admin/CN=123455667
