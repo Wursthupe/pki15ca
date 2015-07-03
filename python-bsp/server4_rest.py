@@ -338,6 +338,11 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             
         # create a new PKCS12 object
         pkcs12 = crypto.PKCS12()
+
+        # set ca certificate chain
+        cacert = []
+        cacerts.append(ca_cert)
+        pkcs12.set_ca_certificates(cacerts)
         
         # set the new user certificate
         pkcs12.set_certificate(x509)
