@@ -1,3 +1,3 @@
 Dieser Befehl aus dem curl-Ordner heraus schickt die im Body definierten Daten als JSON-Objekt zum Server
 
-curl -i -H "Content-Type: application/json" -X POST -d "{""C"":""DE"", ""ST"": ""NRW"", ""L"": ""Minden"", ""O"": ""FH Bielefeld"", ""OU"": ""MIF"", ""CN"": ""shantelmann@fh-bielefeld.de""}" http://localhost:5000/ca/cert/generate
+curl -i -H "Content-Type: application/json" -X POST -d "{""C"":""DE"", ""ST"": ""NRW"", ""L"": ""Minden"", ""O"": ""FH Bielefeld"", ""OU"": ""MIF"", ""CN"": ""shantelmann@fh-bielefeld.de""}" http://localhost:5000/ca/generate

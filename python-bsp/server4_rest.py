@@ -205,7 +205,7 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.data_string = self.rfile.read(int(self.headers['Content-Length']))
         # Format Header correctly
         self.send_response(200)
-        # JSON response: {serialnr / common name of certificate: value}, {status: ok / error}
+        # JSON response: {"name": "value", "status": "Revoked / Not revoked"}
         self.send_header('Content-Type', 'application/json')
         self.end_headers()
 
@@ -219,7 +219,7 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         # Get caCheck and method fields from URL
         caCheck = pathArray[1]
         method = pathArray[2]
-        certId = pathArray[3]
+        certName = pathArray[3]
 
         # Check if a CA service has been called as first argument
         if (caCheck != 'ca'):
@@ -233,19 +233,17 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         # Call the correct method passed in URL
         if (method == 'revoke'):
             # TODO: Header Type must be checked if its json
-            print 'Revoke certificate with ID ', certId
+            print 'Revoke certificate with name: ', certName
             
             # Return json response with status code of revocation to client
-            status = self.revokeCertificate(data)
-            status_response = 'SomeJSONhere'
+            status_nr = self.revokeCertificate(data)
+            if status_nr == 0:
+                status = 'Not revoked'
+            else:
+                status = 'Revoked'
+            status_string = '{"name": "' + certName + ', "status": "' + status + '"}'
+            status_response = json.loads(status_string)
             self.wfile.write(status_response)
-            
-        elif (method == 'sign'):
-            print 'Sign incoming CSR.'
-
-            # Return the cert from CSR as binary data to client
-            binCert = self.signCSR(self.data_string)
-            self.wfile.write(binCert)
         else:
             print 'Unknown command.\nAllowed commands are: generate, sign, revoke.'
 
@@ -255,7 +253,8 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         return index_list.set_revoked(name)
 
     # Generate a new certificate based on user data in JSON format
-    # TODO: CA used in signing and as issuer, but no cert chain yet
+    # TODO: CA used in signing and as issuer, but no cert chain yet (wrong CA certs used)
+    # --> Use certs from Robin
     def generateCertificate(self, userDataList):
         # generate a key-pair with RSA and 2048 bits
         pkey = crypto.PKey()
@@ -316,6 +315,7 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         # sign the certificate
         x509.sign(ca_key, 'sha512')
         
+        # TODO: temporary cert, just for test reasons (should be removed in final version)
         with open("tmp.crt", "w") as tmp_file:
             tmp_file.write(crypto.dump_certificate(crypto.FILETYPE_PEM, x509))
             
@@ -365,7 +365,7 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         # cert gets invalid after 10 years
         x509.gmtime_adj_notAfter(10*365*24*60*60)
 
-        x509.sign(pkey, 'sha256')
+        x509.sign(pkey, 'sha512')
         
         # add certificate to the index-list
         index_list.add_entry(x509)
@@ -424,6 +424,7 @@ if __name__ == '__main__':
     print "Server Starts - %s:%s" % (HOST_NAME, PORT_NUMBER)
     try:
         #TODO: Check if paths match eventually new folder structure
+        # Use .crt and .key files instead of .pem
         cert_file = open("./keys/ca/ca-cert.pem")
         key_file = open("./keys/ca/ca-key.pem")
         ca_cert = crypto.load_certificate(crypto.FILETYPE_PEM, cert_file.read())
