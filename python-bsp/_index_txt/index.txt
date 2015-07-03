@@ -1,3 +1,8 @@
+V	160710181229Z	"empty"	1000	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=PKI42/CN=localhost
+V	160711074730Z	"empty"	1001	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=PKI42/CN=vm02.srvhub.de/emailAddress=pki42@test.de
+V	160711125645Z	"empty"	1002	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=PKI42/CN=vm02.srvhub.de
+V	160711130505Z	"empty"	1003	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=PKI42/CN=vm02.srvhub.de
+V	160711131813Z	"empty"	1004	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=PKI42/CN=vm02.srvhub.de
 R	20250627101938Z	150703090342Z	01	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=MIF/CN=cstuehrmann@fh-bielefeld.de
 R	20250627101956Z	150703090342Z	02	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=MIF/CN=cstuehrmann@fh-bielefeld.de
 V	20250627102058Z	"empty"	03	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=MIF/CN=cstuehrmann2@fh-bielefeld.de
