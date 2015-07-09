@@ -18,7 +18,8 @@ R	20250630121358Z	150703122436Z	100E	unknown	/C=DE/ST=DE/L=DE/O=DE/OU=Admin/CN=D
 V	20250630122436Z	"empty"	100F	unknown	/C=DE/ST=DE/L=DE/O=DE/OU=Admin/CN=DE
 R	20250630122608Z	150703125937Z	1010	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=MIF/CN=cstuehrmann@fh-bielefeld.de
 V	20250630123649Z	"empty"	1011	unknown	/C=DE/ST=NRW/L=Minden/O=PKI42/OU=Admin/CN=12345678
-V	20250630124539Z	"empty"	1012	unknown	/C=DE/ST=NRW/L=Minden/O=PKI42/OU=Admin/CN=Robin Rasch
+R	20250630124539Z	150709122654Z	1012	unknown	/C=DE/ST=NRW/L=Minden/O=PKI42/OU=Admin/CN=Robin Rasch
 V	20250630125241Z	"empty"	1013	unknown	/C=DE/ST=NRW/L=Minden/O=PKI42/OU=Admin/CN=123455667
 V	20250630125937Z	"empty"	1014	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=MIF/CN=cstuehrmann@fh-bielefeld.de
 V	20250630132444Z	"empty"	1015	unknown	/C=DE/ST=NRW/L=Minden/O=FH Bielefeld/OU=MIF/CN=cstuehrmann12345@fh-bielefeld.de
+V	20250706122654Z	"empty"	1016	unknown	/C=DE/ST=NRW/L=Minden/O=PKI42/OU=Admin/CN=Robin Rasch

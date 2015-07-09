@@ -296,7 +296,7 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         pkey.generate_key(crypto.TYPE_RSA, 2048)
         
         # generate CSR
-        csr = generateCSR(pkey, userDataList)
+        csr = self.generateCSR(pkey, userDataList)
         
         # create a new certificate of x509 structure
         x509 = crypto.X509()
@@ -306,7 +306,7 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         
         # X509Name type
         #self.setSubject(x509.get_subject(), userDataList)
-        x509.set_subject(req.get_subject())
+        x509.set_subject(csr.get_subject())
         
         # cert is valid immediately
         x509.gmtime_adj_notBefore(0)
@@ -323,7 +323,7 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         
         # set user public key
         #x509.set_pubkey(pkey)
-        x509.set_pubkey(req.get_pubkey())
+        x509.set_pubkey(csr.get_pubkey())
         
         # SET CLIENT EXTENSIONS
         extensions = []
