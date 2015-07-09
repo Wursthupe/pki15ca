@@ -28,10 +28,13 @@ class EchoClient(Protocol):
         
 
     def dataReceived(self, data):
-        #print "Server said:", data
+        print "Server said:", data
+        data_json = json.loads(data)
+        print "JSON: ", data_json
         
-        f = open("test.pfx","w") #opens file with name of "test.txt"
-        f.write(data)
+        cert_data = data_json["certdata"]
+        f = open("test_client.pfx","w") #opens file with name of "test.txt"
+        f.write(cert_data)
         f.close()
         
         # load certificate data and print something
