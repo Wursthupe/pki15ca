@@ -271,17 +271,48 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def generateCSR(self, pkey, data):
         req = crypto.X509Req()
-        subject = req.get_subject()
         
+        # add subject data
+        subject = req.get_subject()
         subject.C = data["C"]
         subject.ST = data["ST"]
         subject.L = data["L"]
         subject.O = data["O"]
         subject.OU = data["OU"]
         subject.CN = data["CN"]
-
-        #for (key,value) in name.items():
-        #    setattr(subj, key, value)
+        
+        # SET CLIENT EXTENSIONS
+        extensions = []
+        
+        # Set the user certificate to a 'No CA Certificate'
+        basic_constraints_ext = crypto.X509Extension("basicConstraints", False, "CA:FALSE")
+        extensions.append(basic_constraints_ext)
+        
+        cert_type_ext = crypto.X509Extension("nsCertType", False, "client, email")
+        extensions.append(cert_type_ext)
+        
+        ns_comment_ext = crypto.X509Extension("nsComment", False, "OpenSSL Generated Client Certificate")
+        extensions.append(ns_comment_ext)
+        
+        subj_key_ident_ext = crypto.X509Extension("subjectKeyIdentifier", False, "hash", subject=ca_cert)
+        extensions.append(subj_key_ident_ext)
+        
+        auth_key_ident_ext = crypto.X509Extension("authorityKeyIdentifier", False, "keyid", issuer=ca_cert)
+        extensions.append(auth_key_ident_ext)
+        
+        # Set the key usage of the user certificate to 'digitalSignature and keyEncipherment'
+        key_usage_ext = crypto.X509Extension("keyUsage", True, "nonRepudiation, digitalSignature, keyEncipherment")
+        extensions.append(key_usage_ext)
+        
+        # Set the extended key usage of the user certificate to 'clientAuthentication'
+        extended_key_usage_ext = crypto.X509Extension("extendedKeyUsage", False, "clientAuth, emailProtection")
+        extensions.append(extended_key_usage_ext)
+        
+        # Set the info access path to the OCSP URL
+        authority_info_access_ext = crypto.X509Extension("authorityInfoAccess", False, "OCSP;URI:http://vm02.srvhub.de:3000")
+        extensions.append(authority_info_access_ext)
+        
+        req.add_extensions(extensions)
 
         req.set_pubkey(pkey)
         req.sign(pkey, "sha256")
@@ -325,39 +356,8 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         #x509.set_pubkey(pkey)
         x509.set_pubkey(csr.get_pubkey())
         
-        # SET CLIENT EXTENSIONS
-        extensions = []
-        
-        # Set the user certificate to a 'No CA Certificate'
-        basic_constraints_ext = crypto.X509Extension("basicConstraints", False, "CA:FALSE")
-        extensions.append(basic_constraints_ext)
-        
-        cert_type_ext = crypto.X509Extension("nsCertType", False, "client, email")
-        extensions.append(cert_type_ext)
-        
-        ns_comment_ext = crypto.X509Extension("nsComment", False, "OpenSSL Generated Client Certificate")
-        extensions.append(ns_comment_ext)
-        
-        subj_key_ident_ext = crypto.X509Extension("subjectKeyIdentifier", False, "hash", subject=ca_cert)
-        extensions.append(subj_key_ident_ext)
-        
-        auth_key_ident_ext = crypto.X509Extension("authorityKeyIdentifier", False, "keyid", issuer=ca_cert)
-        extensions.append(auth_key_ident_ext)
-        
-        # Set the key usage of the user certificate to 'digitalSignature and keyEncipherment'
-        key_usage_ext = crypto.X509Extension("keyUsage", True, "nonRepudiation, digitalSignature, keyEncipherment")
-        extensions.append(key_usage_ext)
-        
-        # Set the extended key usage of the user certificate to 'clientAuthentication'
-        extended_key_usage_ext = crypto.X509Extension("extendedKeyUsage", False, "clientAuth, emailProtection")
-        extensions.append(extended_key_usage_ext)
-        
-        # Set the info access path to the OCSP URL
-        authority_info_access_ext = crypto.X509Extension("authorityInfoAccess", False, "OCSP;URI:http://vm02.srvhub.de:3000")
-        extensions.append(authority_info_access_ext)
-        
-        # Add all extensions to the new certificate
-        x509.add_extensions(extensions)
+        # add extensions
+        x509.add_extensions(csr.get_extensions())
         
         # sign the certificate
         x509.sign(ca_key, 'sha256')
