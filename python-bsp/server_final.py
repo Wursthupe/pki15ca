@@ -200,17 +200,32 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
             # Return pkcs12 as binary data to client
             passphrase = get_random_word(20)
+            print "Passphrase: '", passphrase, "'"
             binCert = self.generateCertificate(data, passphrase)
             print base64.b64encode(binCert)
             binCert = base64.b64encode(binCert)
-            json_data = json.dumps({"status":1, "certdata": binCert, "passphrase":passphrase})
+            json_data = json.dumps({ "status":1, "certdata": binCert, "passphrase":passphrase })
             self.wfile.write(json_data)
             
         elif (method == 'sign'):
             print 'Sign incoming CSR.'
+            
+            # Decode base64 format and load the request
+            encoded_csr = data["csr"]
+            decoded_csr = base64.base64decode(encoded_csr)
+            csr = crypto.load_certificate_request(crypto.FILETYPE_PEM, decoded_csr)
 
-            # Return the cert from CSR as binary data to client
-            binCert = self.signCSR(self.data_string)
+            # Generate signed certificate from CSR
+            cert_dump_pem = self.sign_csr(csr)
+            
+            # set up response
+            # { cn: COMMON NAME, cd: CREATION DATA, certdata: B64 ENCODED BIN CERT }
+            common_name = export_x509name(cert.get_subject())
+            creation_date = cert.get_notAfter()
+            b64_cert = base64.b64encode(cert_dump_pem)
+            
+            json_response = json.dumps({ "status": 1, "cn": common_name, "cd": creation_date, "certdata": b64_cert })
+            
             self.wfile.write(binCert)
         else:
             print 'Unknown command.\nAllowed commands are: generate, sign, revoke.'
@@ -269,7 +284,7 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         name = data["name"]
         return index_list.set_revoked(name)
 
-    def generateCSR(self, pkey, data):
+    def generate_csr(self, pkey, data):
         req = crypto.X509Req()
         
         # add subject data
@@ -315,7 +330,7 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         req.add_extensions(extensions)
 
         req.set_pubkey(pkey)
-        req.sign(pkey, "sha256")
+        req.sign(ca_key, "sha256")
         return req
 
     # Generate a new certificate based on user data in JSON format
@@ -327,7 +342,7 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         pkey.generate_key(crypto.TYPE_RSA, 2048)
         
         # generate CSR
-        csr = self.generateCSR(pkey, userDataList)
+        csr = self.generate_csr(pkey, userDataList)
         
         # create a new certificate of x509 structure
         x509 = crypto.X509()
@@ -407,20 +422,8 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         return subject
     
     # Sign an incoming CSR from RA and return the signed certificate in binary format
-    def signCSR(self, csrData):
-        # Load the CSR from binary input
-        csr = crypto.load_certificate_request(crypto.FILETYPE_PEM, self.data_string)
-        print 'CSR loaded from subject: ', csr.get_subject()
-        
-        # Get data from CSR and insert it into new cert
-        cert = crypto.X509()
-        cert.set_subject(csr.get_subject())
-        cert.set_serial_number(index_list.next_serial_number())
-        cert.gmtime_adj_notBefore(0)
-        cert.gmtime_adj_notAfter(365*24*60*60)
-        cert.set_issuer(ca_cert.get_subject())
-        cert.set_pubkey(csr.get_pubkey())
-        
+    def sign_csr(self, csr_obj):
+        # add extensions to csr
         extensions = []
         
         # Set the user certificate to a 'No CA Certificate'
@@ -452,18 +455,33 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         extensions.append(authority_info_access_ext)
         
         # Add all extensions to the new certificate
-        x509.add_extensions(extensions)
+        csr_obj.add_extensions(extensions)
+        
+        # sign the CSR
+        csr_obj.sign(ca_key, "sha256")
+        
+        # Get data from CSR and insert it into new cert
+        cert = crypto.X509()
+        cert.set_subject(csr_obj.get_subject())
+        cert.set_serial_number(index_list.next_serial_number())
+        cert.gmtime_adj_notBefore(0)
+        cert.gmtime_adj_notAfter(365*24*60*60)
+        cert.set_issuer(ca_cert.get_subject())
+        cert.set_pubkey(csr_obj.get_pubkey())
+        
+        # Retrieve set extensions
+        cert.add_extensions(csr_obj.get_extensions())
         
         # Sign this new cert with the CA
-        cert.sign(ca_key, 'sha512')
+        cert.sign(ca_key, 'sha256')
         
-        # Add the new cert to index.txt databse
+        # Add the new cert to index.txt
         index_list.add_entry(cert)
-        #pkcs12 = crypto.PKCS12()
-        #pkcs12.set_certificate(cert)
         
-        # TODO: correct this line!
-        #pkcs12.set_privatekey(?)
+        # return a dump in PEM format
+        cert_dump = crypto.dump_certificate(crypto.FILETYPE_PEM, cert)
+        
+        return cert_dump
 
 # Export data fields of a certificate as a string in X509-Format (/C=XXX/ST=XXX/...)
 def export_x509name(x509name):
