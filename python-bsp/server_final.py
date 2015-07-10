@@ -212,7 +212,8 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             
             # Decode base64 format and load the request
             encoded_csr = data["csr"]
-            decoded_csr = base64.base64decode(encoded_csr)
+            #decoded_csr = base64.base64decode(encoded_csr)
+            decoded_csr = base64.decodestring(encoded_csr)
             csr = crypto.load_certificate_request(crypto.FILETYPE_PEM, decoded_csr)
 
             # Generate signed certificate from CSR
@@ -476,7 +477,7 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         cert.sign(ca_key, 'sha256')
         
         # Add the new cert to index.txt
-        index_list.add_entry(cert)
+        #index_list.add_entry(cert)
         
         # return a dump in PEM format
         cert_dump = crypto.dump_certificate(crypto.FILETYPE_PEM, cert)
