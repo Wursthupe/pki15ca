@@ -223,12 +223,12 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             # { cn: COMMON NAME, cd: CREATION DATA, certdata: B64 ENCODED BIN CERT }
             common_name = export_x509name(cert.get_subject())
             creation_date = cert.get_notAfter()
-            cert_dump = crypto.dump_certificate(crypto.FILETYPE_PEM, cert)
+            cert_dump_pem = crypto.dump_certificate(crypto.FILETYPE_PEM, cert)
             b64_cert = base64.b64encode(cert_dump_pem)
             
             json_response = json.dumps({ "status": 1, "cn": common_name, "cd": creation_date, "certdata": b64_cert })
             
-            self.wfile.write(binCert)
+            self.wfile.write(json_response)
         else:
             print 'Unknown command.\nAllowed commands are: generate, sign, revoke.'
 
