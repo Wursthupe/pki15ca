@@ -246,14 +246,14 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         # Split URL path on '/' and check length
         print self.path
         pathArray = self.path.split('/')
-        if len(pathArray) != 4:
+        if len(pathArray) != 3:
             print 'Wrong Path. Correct path would be /ca/method. Methods are: generate, sign, revoke.'
             return
         
         # Get caCheck and method fields from URL
         caCheck = pathArray[1]
         method = pathArray[2]
-        certName = pathArray[3]
+        #certName = pathArray[3]
 
         # Check if a CA service has been called as first argument
         if (caCheck != 'ca'):
@@ -266,10 +266,8 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         
         # Call the correct method passed in URL
         if (method == 'revoke'):
-            # TODO: Header Type must be checked if its json
-            print 'Revoke certificate with name: ', certName
-            
             # Return json response with status code of revocation to client
+            print "Data in PUT received: ", data
             status_nr = self.revoke_certificate(data)
             json_response = json.dumps({ "status":status_nr })
             self.wfile.write(json_response)
@@ -473,7 +471,7 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         cert.sign(ca_key, 'sha256')
         
         # Add the new cert to index.txt
-        #index_list.add_entry(cert)
+        index_list.add_entry(cert)
         
         # return server certificate
         return cert
