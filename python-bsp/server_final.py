@@ -437,7 +437,7 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         ns_comment_ext = crypto.X509Extension("nsComment", False, "OpenSSL Generated Server Certificate")
         extensions.append(ns_comment_ext)
         
-        subj_key_ident_ext = crypto.X509Extension("subjectKeyIdentifier", False, "hash")
+        subj_key_ident_ext = crypto.X509Extension("subjectKeyIdentifier", False, "hash", subject=ca_cert)
         extensions.append(subj_key_ident_ext)
         
         auth_key_ident_ext = crypto.X509Extension("authorityKeyIdentifier", False, "keyid", issuer=ca_cert)
