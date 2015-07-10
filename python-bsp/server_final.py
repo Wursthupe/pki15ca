@@ -439,7 +439,7 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         subj_key_ident_ext = crypto.X509Extension("subjectKeyIdentifier", False, "hash")
         extensions.append(subj_key_ident_ext)
         
-        auth_key_ident_ext = crypto.X509Extension("authorityKeyIdentifier", False, "keyid, issuer:always")
+        auth_key_ident_ext = crypto.X509Extension("authorityKeyIdentifier", False, "keyid", issuer=ca_cert)
         extensions.append(auth_key_ident_ext)
         
         # Set the key usage of the user certificate to 'digitalSignature and keyEncipherment'
