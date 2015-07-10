@@ -270,19 +270,14 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             print 'Revoke certificate with name: ', certName
             
             # Return json response with status code of revocation to client
-            status_nr = self.revokeCertificate(data)
-            if status_nr == 0:
-                status = 'Not revoked'
-            else:
-                status = 'Revoked'
-            status_string = '{"name": "' + certName + ', "status": "' + status + '"}'
-            status_response = json.loads(status_string)
-            self.wfile.write(status_response)
+            status_nr = self.revoke_certificate(data)
+            json_response = json.dumps({ "status":status_nr })
+            self.wfile.write(json_response)
         else:
             print 'Unknown command.\nAllowed commands are: generate, sign, revoke.'
 
     # Revoke a certificate in index list based on its name
-    def revokeCertificate(self, data):
+    def revoke_certificate(self, data):
         name = data["name"]
         return index_list.set_revoked(name)
 
