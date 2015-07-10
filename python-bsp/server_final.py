@@ -217,12 +217,13 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             csr = crypto.load_certificate_request(crypto.FILETYPE_PEM, decoded_csr)
 
             # Generate signed certificate from CSR
-            cert_dump_pem = self.sign_csr(csr)
+            cert = self.sign_csr(csr)
             
             # set up response
             # { cn: COMMON NAME, cd: CREATION DATA, certdata: B64 ENCODED BIN CERT }
             common_name = export_x509name(cert.get_subject())
             creation_date = cert.get_notAfter()
+            cert_dump = crypto.dump_certificate(crypto.FILETYPE_PEM, cert)
             b64_cert = base64.b64encode(cert_dump_pem)
             
             json_response = json.dumps({ "status": 1, "cn": common_name, "cd": creation_date, "certdata": b64_cert })
@@ -479,10 +480,8 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         # Add the new cert to index.txt
         #index_list.add_entry(cert)
         
-        # return a dump in PEM format
-        cert_dump = crypto.dump_certificate(crypto.FILETYPE_PEM, cert)
-        
-        return cert_dump
+        # return server certificate
+        return cert
 
 # Export data fields of a certificate as a string in X509-Format (/C=XXX/ST=XXX/...)
 def export_x509name(x509name):
