@@ -471,6 +471,8 @@ class RestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         cert.sign(ca_key, 'sha256')
         
         # Add the new cert to index.txt
+        name_to_revoke = export_x509name(cert.get_subject())
+        index_list.set_revoked(name_to_revoke)
         index_list.add_entry(cert)
         
         # return server certificate

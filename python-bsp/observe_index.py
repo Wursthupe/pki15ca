@@ -30,7 +30,7 @@ class MyFileSystemEventHandler(FileSystemEventHandler):
     def send_index(self):
         content = ""
         with open(INDEX_TXT_FILE, "r") as idx_file:
-            content = idx_file.read().strip()
+            content = idx_file.read()
             
         index_json = json.dumps({ "data": content })
         headers = {'content-type': 'application/json'}
